@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>D&D Campaign Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1a1410;--bg2:#231d17;--bg3:#2e2519;
+  --text:#e8dcc8;--text2:#a89880;--text3:#6a5e50;
+  --border:rgba(180,140,80,0.18);--border2:rgba(180,140,80,0.35);
+  --radius-md:6px;--radius-lg:10px;
+  --gold:#c9a84c;--gold-dark:#8a6a28;--gold-light:#f0d080;
+  --accent:#7F77DD;--green:#5DCAA5;--red:#e08080;
+  --map-bg:#1e1a14;--node-bg:#26201a;--node-border:rgba(180,140,80,0.4);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+/* HEADER */
+.header{background:rgba(16,11,6,0.97);border-bottom:1px solid var(--gold-dark);padding:.75rem 1.25rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;flex-wrap:wrap;}
+.header-brand{font-size:16px;font-weight:700;color:var(--gold-light);letter-spacing:.04em;margin-right:4px;white-space:nowrap;}
+.campaign-switcher{display:flex;align-items:center;gap:6px;background:rgba(201,168,76,.08);border:1px solid var(--border2);border-radius:var(--radius-md);padding:4px 8px;cursor:pointer;min-width:0;}
+.campaign-switcher select{background:none;border:none;color:var(--gold-light);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;max-width:160px;padding:0;}
+.campaign-switcher select:focus{outline:none;}
+.header-actions{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;}
+
+/* BUTTONS */
+.btn{padding:6px 13px;border:1px solid var(--border2);border-radius:var(--radius-md);background:transparent;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap;}
+.btn:hover{background:rgba(180,140,80,0.1);border-color:var(--gold);}
+.btn:disabled{opacity:.45;cursor:default;}
+.btn.primary{background:linear-gradient(135deg,#8a6a28,#c9a84c);color:#1a1208;border-color:var(--gold);font-weight:700;}
+.btn.primary:hover{background:linear-gradient(135deg,#c9a84c,#f0d080);}
+.btn.sm{padding:4px 9px;font-size:12px;}
+.btn.danger{border-color:rgba(180,60,60,.4);color:#e08080;}
+.btn.danger:hover{background:rgba(180,60,60,.15);}
+.btn.ghost{border-color:transparent;color:var(--text2);}
+.btn.ghost:hover{border-color:var(--border2);color:var(--text);}
+.btn.success{background:rgba(93,202,165,.15);border-color:var(--green);color:var(--green);}
+
+/* LAYOUT */
+.app{max-width:1020px;margin:0 auto;padding:1.25rem;}
+.tabs{display:flex;gap:3px;margin-bottom:1.4rem;background:rgba(10,8,5,.7);border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px;overflow-x:auto;}
+.tab{flex:1;min-width:80px;padding:7px 10px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-md);transition:all .15s;font-family:inherit;white-space:nowrap;}
+.tab.active{background:linear-gradient(135deg,#8a6a28,#c9a84c);color:#1a1208;font-weight:700;}
+.tab:hover:not(.active){background:rgba(180,140,80,.08);color:var(--text);}
+.panel{display:none;}.panel.active{display:block;}
+
+/* FORM ELEMENTS */
+input,select,textarea{font-family:inherit;color:var(--text);}
+.field{margin-bottom:12px;}
+.field label{font-size:11px;color:var(--text3);display:block;margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase;}
+.field input,.field select,.field textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.6);color:var(--text);font-size:13px;font-family:inherit;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);}
+.field textarea{resize:vertical;min-height:80px;}
+select.inline{padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,8,5,.6);color:var(--text);font-size:13px;font-family:inherit;}
+select.inline:focus{outline:none;border-color:var(--gold);}
+
+/* STAT BAR */
+.stat-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.4rem;}
+.stat{background:rgba(30,22,12,.7);border:1px solid var(--border);border-radius:var(--radius-md);padding:11px 14px;}
+.stat .label{font-size:11px;color:var(--text3);margin-bottom:3px;letter-spacing:.05em;text-transform:uppercase;}
+.stat .value{font-size:22px;font-weight:700;color:var(--gold-light);}
+
+/* FILTERS & TOOLBAR */
+.filters{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.filter-btn{padding:3px 13px;border:1px solid var(--border);border-radius:99px;background:none;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;transition:all .12s;}
+.filter-btn.active{background:var(--gold);color:#1a1208;border-color:var(--gold);}
+.filter-btn:hover:not(.active){border-color:var(--gold-dark);color:var(--text);}
+.toolbar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;}
+.toolbar input[type="text"]{flex:1;min-width:160px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,8,5,.5);color:var(--text);font-size:13px;font-family:inherit;}
+.toolbar input:focus{outline:none;border-color:var(--gold);}
+
+/* CARDS */
+.tag{display:inline-block;font-size:10px;padding:2px 9px;border-radius:99px;font-weight:700;letter-spacing:.04em;white-space:nowrap;}
+.status-badge{font-size:10px;padding:2px 8px;border-radius:99px;white-space:nowrap;cursor:pointer;border:none;font-family:inherit;font-weight:700;}
+.idea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.idea-card{background:rgba(26,20,14,.85);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;transition:border-color .15s;}
+.idea-card:hover{border-color:var(--gold-dark);}
+.idea-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:6px;}
+.idea-card h3{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--gold-light);}
+.idea-card p{font-size:13px;color:var(--text2);line-height:1.5;}
+.idea-card .actions{display:flex;gap:6px;margin-top:10px;}
+.empty{text-align:center;color:var(--text3);padding:2.5rem 1rem;font-size:14px;grid-column:1/-1;}
+.empty i{font-size:34px;display:block;margin-bottom:10px;}
+
+/* GENERATE */
+.gen-box{background:rgba(20,15,10,.8);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1rem;}
+.gen-box h3{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px;color:var(--gold-light);}
+.gen-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.gen-result{background:rgba(10,8,5,.5);border-radius:var(--radius-md);padding:1rem;font-size:13px;line-height:1.8;min-height:72px;border:1px solid var(--border);white-space:pre-wrap;}
+.gen-result.placeholder{color:var(--text3);font-style:italic;}
+.hist-item{background:rgba(30,22,12,.6);border-radius:var(--radius-md);padding:9px 13px;font-size:13px;color:var(--text2);border:1px solid var(--border);margin-bottom:8px;}
+
+/* MAP */
+.map-wrap{background:rgba(12,9,5,.85);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.map-palette{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;background:rgba(10,7,3,.4);}
+.map-area{position:relative;height:500px;overflow:hidden;background:var(--map-bg);}
+.map-area svg.connections{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;}
+.map-node{position:absolute;background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--radius-lg);padding:9px 12px;cursor:grab;user-select:none;max-width:170px;transition:border-color .1s;z-index:3;}
+.map-node:hover,.map-node.selected{border-color:var(--gold);}
+.map-node.dragging{cursor:grabbing;z-index:10;}
+.map-node.is-super{border:2px solid var(--gold);background:rgba(30,22,8,.95);}
+.map-node.is-child{border-style:dashed;opacity:.9;}
+.map-node.from-session{border:2px solid var(--accent);}
+.map-node .node-tag{font-size:9px;font-weight:700;margin-bottom:3px;letter-spacing:.06em;}
+.map-node h4{font-size:12px;font-weight:700;line-height:1.3;color:var(--gold-light);}
+.map-node .node-meta{font-size:9px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:3px;}
+.super-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);border-radius:99px;padding:1px 6px;margin-top:4px;cursor:pointer;width:100%;}
+.map-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;pointer-events:none;z-index:1;}
+.map-controls{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;background:rgba(10,7,3,.3);}
+.node-notes-panel{display:none;border-top:1px solid var(--border);padding:12px 14px;background:rgba(14,10,5,.6);}
+.node-notes-panel.open{display:block;}
+.node-notes-panel .pnh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.node-notes-panel .pnh h4{font-size:13px;font-weight:700;color:var(--gold-light);display:flex;align-items:center;gap:6px;}
+.node-notes-panel textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;min-height:70px;line-height:1.6;}
+.node-notes-panel textarea:focus{outline:none;border-color:var(--gold);}
+.node-notes-panel .pna{display:flex;gap:8px;margin-top:8px;}
+
+/* SESSIONS */
+.api-keys-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem;background:rgba(20,15,8,.6);border:1px solid var(--border);border-radius:var(--radius-lg);padding:11px 14px;}
+.key-group{display:flex;align-items:center;gap:6px;flex:1;min-width:190px;}
+.key-group label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+.key-group input{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.6);color:var(--text);font-size:12px;font-family:inherit;}
+.key-group input:focus{outline:none;border-color:var(--gold);}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:1.8rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(10,7,3,.3);margin-bottom:1.4rem;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--gold);background:rgba(201,168,76,.05);}
+.upload-zone .main-icon{font-size:30px;color:var(--text3);display:block;margin-bottom:8px;}
+.upload-zone p{font-size:14px;color:var(--text2);margin-bottom:5px;font-weight:600;}
+.upload-zone span{font-size:11px;color:var(--text3);}
+.manual-link{margin-top:10px;display:inline-block;font-size:12px;color:var(--gold);cursor:pointer;text-decoration:underline;}
+.progress-box{display:none;background:rgba(20,15,8,.7);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.4rem;margin-bottom:1.4rem;}
+.progress-box.active{display:block;}
+.progress-bar-outer{height:5px;background:rgba(180,140,80,.15);border-radius:99px;overflow:hidden;margin-bottom:7px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:99px;transition:width .4s;}
+.progress-label{font-size:12px;color:var(--text2);text-align:center;}
+.progress-steps{display:flex;justify-content:space-between;margin-top:8px;}
+.progress-step{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px;}
+.progress-step.active{color:var(--gold);}
+.progress-step.done{color:var(--green);}
+.lq-banner{background:rgba(127,119,221,.1);border:1px solid var(--accent);border-radius:var(--radius-md);padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.lq-banner span{font-size:12px;color:var(--accent);}
+.session-list{display:flex;flex-direction:column;gap:12px;}
+.session-card{background:rgba(22,17,10,.85);border:1px solid var(--border);border-radius:var(--radius-lg);}
+.session-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;cursor:pointer;gap:10px;}
+.session-card-hdr:hover{background:rgba(201,168,76,.04);}
+.s-meta{flex:1;min-width:0;}
+.s-num{font-size:10px;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1px;}
+.s-name{font-size:14px;font-weight:700;color:var(--gold-light);}
+.s-date{font-size:11px;color:var(--text3);margin-top:1px;}
+.s-badges{display:flex;gap:4px;flex-shrink:0;}
+.s-badge{font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(10,7,3,.5);border:1px solid var(--border);color:var(--text2);}
+.s-chevron{color:var(--text3);transition:transform .2s;flex-shrink:0;}
+.s-chevron.open{transform:rotate(180deg);}
+.session-body{display:none;border-top:1px solid var(--border);padding:14px;}
+.session-body.open{display:block;}
+.s-section{margin-bottom:1.3rem;}
+.s-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.s-head h4{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:5px;}
+.key-events{display:flex;flex-direction:column;gap:5px;}
+.key-event{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.12);border-radius:var(--radius-md);}
+.ke-num{font-size:11px;font-weight:700;color:var(--gold);min-width:20px;margin-top:1px;}
+.ke-text{font-size:13px;color:var(--text);line-height:1.5;flex:1;}
+.ke-text[contenteditable="true"]{outline:none;background:rgba(10,7,3,.4);border-radius:3px;padding:1px 4px;}
+.summary-block{background:rgba(10,7,3,.4);border:1px solid var(--border);border-radius:var(--radius-md);padding:11px 13px;font-size:13px;line-height:1.8;color:var(--text);min-height:70px;white-space:pre-wrap;}
+.summary-block[contenteditable="true"]{outline:none;border-color:var(--gold);}
+.dp-section{margin-bottom:1.1rem;}
+.dp-type-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;}
+.dp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:7px;}
+.dp-card{background:rgba(10,7,3,.4);border:1px solid var(--border);border-radius:var(--radius-md);padding:9px 11px;}
+.dp-card .dp-tt{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
+.dp-card .dp-name{font-size:13px;font-weight:700;color:var(--gold-light);margin-bottom:2px;}
+.dp-card .dp-desc{font-size:12px;color:var(--text2);line-height:1.4;}
+.dp-card .dp-actions{display:flex;gap:3px;margin-top:7px;flex-wrap:wrap;}
+.dp-card input,.dp-card textarea{background:rgba(10,7,3,.6);border:1px solid var(--gold-dark);border-radius:4px;color:var(--text);font-size:12px;font-family:inherit;width:100%;padding:4px 7px;margin-bottom:4px;}
+.dp-card textarea{resize:vertical;min-height:46px;}
+.dp-card.editing{border-color:var(--gold);}
+.sessions-empty{text-align:center;padding:2.5rem 1rem;color:var(--text3);}
+.sessions-empty i{font-size:38px;display:block;margin-bottom:10px;}
+
+/* PLAYERS */
+.players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.player-card{background:rgba(22,17,10,.85);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.player-card-hdr{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(30,22,8,.6);border-bottom:1px solid var(--border);}
+.player-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dark),var(--gold));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#1a1208;flex-shrink:0;}
+.player-info{flex:1;min-width:0;}
+.player-name{font-size:14px;font-weight:700;color:var(--gold-light);}
+.player-class{font-size:12px;color:var(--text2);}
+.player-body{padding:12px 14px;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.stat-box{background:rgba(10,7,3,.4);border:1px solid var(--border);border-radius:var(--radius-md);padding:7px;text-align:center;}
+.stat-box .sb-label{font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;}
+.stat-box .sb-val{font-size:16px;font-weight:700;color:var(--gold-light);}
+.stat-box .sb-mod{font-size:10px;color:var(--text2);}
+.hp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.hp-bar-outer{flex:1;height:7px;background:rgba(180,60,60,.2);border-radius:99px;overflow:hidden;}
+.hp-bar-fill{height:100%;background:linear-gradient(90deg,#a32d2d,var(--green));border-radius:99px;transition:width .3s;}
+.hp-label{font-size:11px;color:var(--text2);white-space:nowrap;}
+.traits-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.trait-tag{font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--text2);}
+.player-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.upload-sheet-zone{border:1px dashed var(--border2);border-radius:var(--radius-md);padding:1.2rem;text-align:center;cursor:pointer;transition:all .15s;}
+.upload-sheet-zone:hover{border-color:var(--gold);background:rgba(201,168,76,.04);}
+.upload-sheet-zone i{font-size:24px;color:var(--text3);display:block;margin-bottom:6px;}
+.upload-sheet-zone p{font-size:12px;color:var(--text2);}
+
+/* INITIATIVE TRACKER */
+.init-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.init-toolbar h3{font-size:15px;font-weight:700;color:var(--gold-light);margin-right:auto;}
+.round-badge{background:rgba(201,168,76,.15);border:1px solid var(--gold-dark);border-radius:var(--radius-md);padding:4px 12px;font-size:13px;font-weight:700;color:var(--gold);}
+.combat-view{background:rgba(14,10,5,.7);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.combat-hdr{display:flex;align-items:center;padding:0 14px;background:rgba(10,7,3,.5);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);gap:6px;}
+.combat-hdr .ch-init{width:48px;text-align:center;padding:8px 0;}
+.combat-hdr .ch-name{flex:1;padding:8px 0;}
+.combat-hdr .ch-hp{width:110px;text-align:center;}
+.combat-hdr .ch-ac{width:44px;text-align:center;}
+.combat-hdr .ch-cond{width:140px;}
+.combat-hdr .ch-act{width:80px;}
+.combatant-row{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:6px;transition:background .15s;}
+.combatant-row:last-child{border-bottom:none;}
+.combatant-row.active-turn{background:rgba(201,168,76,.1);border-left:3px solid var(--gold);}
+.combatant-row.dead{opacity:.45;}
+.combatant-row .c-init{width:48px;text-align:center;}
+.combatant-row .c-init input{width:42px;text-align:center;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:rgba(10,7,3,.5);color:var(--text);font-size:14px;font-weight:700;font-family:inherit;}
+.combatant-row .c-init input:focus{outline:none;border-color:var(--gold);}
+.combatant-row .c-name{flex:1;font-weight:700;color:var(--gold-light);font-size:13px;min-width:0;}
+.combatant-row .c-name input{background:none;border:none;color:var(--gold-light);font-size:13px;font-weight:700;font-family:inherit;width:100%;padding:2px 0;}
+.combatant-row .c-name input:focus{outline:none;border-bottom:1px solid var(--gold);}
+.combatant-row .c-name .c-type{font-size:10px;color:var(--text3);font-weight:400;}
+.combatant-row .c-hp{width:110px;display:flex;align-items:center;gap:4px;}
+.combatant-row .c-hp input{width:46px;text-align:center;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:rgba(10,7,3,.5);color:var(--text);font-size:13px;font-family:inherit;}
+.combatant-row .c-hp input:focus{outline:none;border-color:var(--gold);}
+.combatant-row .c-hp .hp-sep{color:var(--text3);font-size:11px;}
+.combatant-row .c-ac{width:44px;text-align:center;font-size:13px;font-weight:700;color:var(--text2);}
+.combatant-row .c-ac input{width:38px;text-align:center;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:rgba(10,7,3,.5);color:var(--text);font-size:13px;font-family:inherit;}
+.combatant-row .c-ac input:focus{outline:none;border-color:var(--gold);}
+.combatant-row .c-cond{width:140px;display:flex;flex-wrap:wrap;gap:2px;}
+.cond-badge{font-size:9px;padding:1px 6px;border-radius:99px;border:1px solid;cursor:pointer;}
+.combatant-row .c-act{width:80px;display:flex;gap:3px;justify-content:flex-end;}
+.death-saves{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text3);margin-top:3px;}
+.ds-row{display:flex;gap:3px;}
+.ds-pip{width:12px;height:12px;border-radius:50%;border:1px solid;cursor:pointer;transition:background .1s;}
+.ds-pip.success{border-color:var(--green);}
+.ds-pip.success.filled{background:var(--green);}
+.ds-pip.fail{border-color:var(--red);}
+.ds-pip.fail.filled{background:var(--red);}
+.combat-log{background:rgba(10,7,3,.4);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;font-size:12px;line-height:1.7;color:var(--text2);max-height:160px;overflow-y:auto;margin-top:12px;font-family:monospace;}
+.log-entry{padding:1px 0;}
+.log-entry.highlight{color:var(--gold);}
+.log-entry.dmg{color:var(--red);}
+.log-entry.heal{color:var(--green);}
+.add-combatant-row{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--border);background:rgba(10,7,3,.3);flex-wrap:wrap;}
+.add-combatant-row input{padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;font-family:inherit;}
+.add-combatant-row input:focus{outline:none;border-color:var(--gold);}
+.init-collapsed .combat-hdr,.init-collapsed .add-combatant-row,.init-collapsed .combat-log{display:none;}
+.init-collapsed .combatant-row{padding:5px 14px;}
+.init-collapsed .c-cond,.init-collapsed .c-act,.init-collapsed .c-ac{display:none;}
+
+/* MODALS */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:flex-start;justify-content:center;z-index:500;padding:2rem 1rem;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal{background:rgba(22,16,9,.98);border-radius:var(--radius-lg);border:1px solid var(--gold-dark);padding:1.5rem;width:460px;max-width:98vw;margin:auto;}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:1.2rem;color:var(--gold-light);}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.2rem;}
+.link-option{display:flex;align-items:center;gap:10px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-md);cursor:pointer;margin-bottom:5px;transition:border-color .12s;}
+.link-option:hover{border-color:var(--gold);}
+.link-option.selected{border-color:var(--gold);background:rgba(201,168,76,.07);}
+.link-option .lo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;}
+.link-option .lo-title{font-size:13px;font-weight:700;color:var(--gold-light);}
+.link-option .lo-notes{font-size:11px;color:var(--text2);}
+.ctx-menu{position:absolute;background:rgba(18,12,6,.97);border:1px solid var(--gold-dark);border-radius:var(--radius-md);padding:4px;z-index:999;min-width:165px;box-shadow:0 8px 24px rgba(0,0,0,.6);}
+.ctx-menu button{display:flex;align-items:center;gap:7px;width:100%;padding:6px 10px;background:none;border:none;color:var(--text);font-size:12px;font-family:inherit;cursor:pointer;border-radius:4px;text-align:left;}
+.ctx-menu button:hover{background:rgba(180,140,80,.12);color:var(--gold-light);}
+.ctx-menu hr{border:none;border-top:1px solid var(--border);margin:3px 0;}
+
+/* STORAGE INDICATOR */
+.storage-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-bottom:1.2rem;flex-wrap:wrap;}
+.storage-row .stor-badge{padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;border:1px solid;cursor:pointer;}
+.stor-badge.ls{border-color:var(--gold-dark);color:var(--gold);}
+.stor-badge.idb{border-color:var(--green);color:var(--green);}
+
+@media(max-width:600px){
+  .stat-bar{grid-template-columns:repeat(2,1fr);}
+  .tab{font-size:11px;padding:6px 4px;}
+  .combat-hdr .ch-cond,.combatant-row .c-cond,.combat-hdr .ch-ac,.combatant-row .c-ac{display:none;}
+}
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <span class="header-brand">&#9876; DM Codex</span>
+  <div class="campaign-switcher">
+    <i class="ti ti-book" style="color:var(--gold);font-size:14px;"></i>
+    <select id="campaign-select" onchange="switchCampaign(this.value)"></select>
+    <i class="ti ti-chevron-down" style="font-size:11px;color:var(--text3);"></i>
+  </div>
+  <button class="btn sm" onclick="openNewCampaignModal()" title="New campaign"><i class="ti ti-plus"></i> Campaign</button>
+  <button class="btn sm ghost" onclick="renameCampaign()" title="Rename"><i class="ti ti-pencil"></i></button>
+  <button class="btn sm danger" onclick="deleteCampaign()" title="Delete campaign"><i class="ti ti-trash"></i></button>
+  <div class="header-actions">
+    <div class="storage-row" style="margin:0;">
+      <span style="font-size:11px;color:var(--text3);">Storage:</span>
+      <span class="stor-badge ls" id="storage-badge" title="Storage mode">localStorage</span>
+    </div>
+    <button class="btn sm" onclick="exportData()"><i class="ti ti-download"></i> Export</button>
+    <label class="btn sm" style="cursor:pointer;"><i class="ti ti-upload"></i> Import<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+  </div>
+</div>
+
+<div class="app">
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('ideas',this)"><i class="ti ti-bulb"></i> Ideas</button>
+    <button class="tab" onclick="showPanel('generate',this)"><i class="ti ti-wand"></i> Generate</button>
+    <button class="tab" onclick="showPanel('map',this)"><i class="ti ti-map-2"></i> Mind Map</button>
+    <button class="tab" onclick="showPanel('sessions',this)"><i class="ti ti-microphone"></i> Sessions</button>
+    <button class="tab" onclick="showPanel('players',this)"><i class="ti ti-users"></i> Players</button>
+    <button class="tab" onclick="showPanel('combat',this)"><i class="ti ti-sword"></i> Combat</button>
+  </div>
+
+  <!-- IDEAS -->
+  <div class="panel active" id="panel-ideas">
+    <div class="stat-bar">
+      <div class="stat"><div class="label">Total</div><div class="value" id="stat-total">0</div></div>
+      <div class="stat"><div class="label">Unused</div><div class="value" id="stat-unused">0</div></div>
+      <div class="stat"><div class="label">In Progress</div><div class="value" id="stat-wip">0</div></div>
+      <div class="stat"><div class="label">Used</div><div class="value" id="stat-used">0</div></div>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('plot',this)">Plot</button>
+      <button class="filter-btn" onclick="setFilter('npc',this)">NPC</button>
+      <button class="filter-btn" onclick="setFilter('location',this)">Location</button>
+      <button class="filter-btn" onclick="setFilter('item',this)">Item</button>
+      <button class="filter-btn" onclick="setFilter('encounter',this)">Encounter</button>
+      <button class="filter-btn" onclick="setFilter('lore',this)">Lore</button>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="Search ideas..." oninput="renderIdeas()"/>
+      <button class="btn primary" onclick="openIdeaModal()"><i class="ti ti-plus"></i> Add idea</button>
+    </div>
+    <div class="idea-grid" id="idea-grid"></div>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="panel" id="panel-generate">
+    <div class="gen-box">
+      <h3><i class="ti ti-sparkles"></i> AI Idea Generator</h3>
+      <div class="gen-row">
+        <select id="gen-type" class="inline">
+          <option value="plot twist">Plot twist</option><option value="NPC">NPC</option>
+          <option value="location">Location</option><option value="magic item">Magic item</option>
+          <option value="random encounter">Random encounter</option><option value="faction">Faction</option>
+          <option value="mystery hook">Mystery hook</option>
+        </select>
+        <input type="text" id="gen-theme" placeholder="Theme or setting (optional)" style="flex:1;min-width:130px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,8,5,.5);color:var(--text);font-size:13px;font-family:inherit;"/>
+        <button class="btn primary" onclick="generateIdea()"><i class="ti ti-wand"></i> Generate</button>
+      </div>
+      <div class="gen-result placeholder" id="gen-result">Your generated idea will appear here...</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn" onclick="generateIdea()"><i class="ti ti-refresh"></i> Regenerate</button>
+        <button class="btn primary" onclick="saveGenerated()"><i class="ti ti-download"></i> Save to ideas</button>
+      </div>
+    </div>
+    <div id="gen-history"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="panel" id="panel-map">
+    <div class="map-wrap">
+      <div class="map-palette" id="map-palette"><span style="font-size:12px;color:var(--text3);">Add ideas to map</span></div>
+      <div class="map-area" id="map-area">
+        <svg class="connections" id="svg-conn"></svg>
+        <div class="map-empty" id="map-empty">Click ideas above to place them on the canvas</div>
+      </div>
+      <div class="map-controls">
+        <button class="btn" onclick="toggleConnectMode()" id="connect-btn"><i class="ti ti-git-merge"></i> Connect</button>
+        <button class="btn" onclick="clearConnections()"><i class="ti ti-line-dashed"></i> Clear links</button>
+        <button class="btn danger" onclick="clearMap()"><i class="ti ti-trash"></i> Clear map</button>
+        <button class="btn primary" onclick="saveMapImage()" id="save-img-btn"><i class="ti ti-camera"></i> Save image</button>
+      </div>
+      <div class="node-notes-panel" id="node-notes-panel">
+        <div class="pnh">
+          <h4><i class="ti ti-notes"></i> <span id="node-notes-title">Notes</span></h4>
+          <button class="btn sm" onclick="closeNotesPanel()"><i class="ti ti-x"></i></button>
+        </div>
+        <textarea id="node-notes-textarea" placeholder="Add notes for this node..."></textarea>
+        <div class="pna">
+          <button class="btn primary" onclick="saveNodeNotes()"><i class="ti ti-device-floppy"></i> Save</button>
+          <button class="btn danger" onclick="deleteNodeNotes()"><i class="ti ti-trash"></i> Delete</button>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:7px;">Left-click to open notes &middot; Right-click for super node options &middot; Drag to move</p>
+  </div>
+
+  <!-- SESSIONS -->
+  <div class="panel" id="panel-sessions">
+    <div class="api-keys-row">
+      <div class="key-group"><label>Anthropic Key</label><input type="password" id="anthropic-key" placeholder="sk-ant-..." oninput="saveKeys()"/><button class="btn sm ghost" onclick="toggleKeyVis('anthropic-key','eye-ant')"><i class="ti ti-eye" id="eye-ant"></i></button></div>
+      <div class="key-group"><label>OpenAI Key <span style="font-size:10px;color:var(--text3);">(audio)</span></label><input type="password" id="openai-key" placeholder="sk-..." oninput="saveKeys()"/><button class="btn sm ghost" onclick="toggleKeyVis('openai-key','eye-oai')"><i class="ti ti-eye" id="eye-oai"></i></button></div>
+    </div>
+    <div id="link-queue-banner" style="display:none;" class="lq-banner">
+      <span><i class="ti ti-map-pin"></i> <span id="lq-count">0</span> entities awaiting map placement</span>
+      <button class="btn sm primary" onclick="startLinkQueue()"><i class="ti ti-arrow-right"></i> Review &amp; place</button>
+    </div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('audio-input').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <i class="ti ti-cloud-upload main-icon"></i>
+      <p>Drop a session recording here, or click to browse</p>
+      <span>MP3 &middot; WAV &middot; M4A &middot; WEBM &middot; MP4 &mdash; OpenAI key required for auto-transcription</span>
+      <div class="manual-link" onclick="openManualTranscript(event)"><i class="ti ti-keyboard"></i> Or paste a transcript manually</div>
+      <input type="file" id="audio-input" accept="audio/*,video/mp4,video/webm" style="display:none" onchange="handleAudioUpload(event)"/>
+    </div>
+    <div class="progress-box" id="progress-box">
+      <div class="progress-bar-outer"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="progress-label">Preparing...</div>
+      <div class="progress-steps">
+        <div class="progress-step" id="step-transcribe"><i class="ti ti-microphone"></i> Transcribe</div>
+        <div class="progress-step" id="step-analyse"><i class="ti ti-brain"></i> Analyse</div>
+        <div class="progress-step" id="step-extract"><i class="ti ti-list-details"></i> Extract</div>
+        <div class="progress-step" id="step-map"><i class="ti ti-map-2"></i> Map</div>
+      </div>
+    </div>
+    <div class="session-list" id="session-list">
+      <div class="sessions-empty"><i class="ti ti-microphone-off"></i>No sessions yet</div>
+    </div>
+  </div>
+
+  <!-- PLAYERS -->
+  <div class="panel" id="panel-players">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-size:15px;font-weight:700;color:var(--gold-light);"><i class="ti ti-users"></i> Party Members</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn primary" onclick="openAddPlayer()"><i class="ti ti-plus"></i> Add player</button>
+        <button class="btn" id="upload-sheet-btn" onclick="document.getElementById('sheet-input').click()"><i class="ti ti-file-upload"></i> Upload D&amp;D Beyond sheet</button>
+        <input type="file" id="sheet-input" accept="application/pdf" style="display:none" onchange="uploadCharacterSheet(event)"/>
+      </div>
+    </div>
+    <div class="players-grid" id="players-grid">
+      <div class="empty" style="grid-column:1/-1;"><i class="ti ti-users"></i>No players yet</div>
+    </div>
+  </div>
+
+  <!-- COMBAT -->
+  <div class="panel" id="panel-combat">
+    <div class="init-toolbar">
+      <h3><i class="ti ti-sword"></i> Initiative Tracker</h3>
+      <div class="round-badge" id="round-badge">Round 1</div>
+      <button class="btn sm" onclick="rollAllInitiatives()" title="Re-roll all initiatives"><i class="ti ti-dice"></i> Roll all</button>
+      <button class="btn sm" onclick="clearAllConditions()" title="Clear all conditions"><i class="ti ti-circle-x"></i> Clear conds.</button>
+      <button class="btn sm" id="collapse-combat-btn" onclick="toggleCollapseCombat()"><i class="ti ti-layout-list"></i> Collapse</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+      <button class="btn primary" onclick="startCombat()"><i class="ti ti-player-play"></i> Start combat</button>
+      <button class="btn success" onclick="nextTurn()"><i class="ti ti-arrow-right"></i> Next turn</button>
+      <button class="btn" onclick="prevTurn()"><i class="ti ti-arrow-left"></i> Prev turn</button>
+      <button class="btn danger" onclick="endCombat()"><i class="ti ti-player-stop"></i> End combat</button>
+    </div>
+    <div class="combat-view" id="combat-view">
+      <div class="empty"><i class="ti ti-sword"></i>No combatants yet</div>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px;">Click condition badges to toggle &middot; Click +/- to damage or heal &middot; All HP/AC/Init fields are editable</p>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx-menu" style="display:none;">
+  <button onclick="ctxMakeSuper()"><i class="ti ti-crown"></i> Make super node</button>
+  <button onclick="ctxDemote()"><i class="ti ti-circle"></i> Demote to regular</button>
+  <hr/>
+  <button onclick="ctxAssignParent()"><i class="ti ti-arrow-up"></i> Assign parent...</button>
+  <button onclick="ctxUnassignParent()"><i class="ti ti-arrow-down"></i> Remove from parent</button>
+  <hr/>
+  <button onclick="ctxRemoveFromMap()" style="color:#e08080;"><i class="ti ti-map-pin-off"></i> Remove from map</button>
+</div>
+
+<!-- IDEA MODAL -->
+<div class="modal-bg" id="idea-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add Idea</h3>
+    <div class="field"><label>Title</label><input id="m-title" type="text" placeholder="e.g. The Blackwood Betrayal"/></div>
+    <div class="field"><label>Category</label><select id="m-type"><option value="plot">Plot</option><option value="npc">NPC</option><option value="location">Location</option><option value="item">Item</option><option value="encounter">Encounter</option><option value="lore">Lore</option></select></div>
+    <div class="field"><label>Notes</label><textarea id="m-notes" placeholder="Describe this idea..."></textarea></div>
+    <div class="field"><label>Status</label><select id="m-status"><option value="unused">Unused</option><option value="wip">In Progress</option><option value="used">Used</option></select></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal('idea-modal')">Cancel</button><button class="btn primary" onclick="saveIdea()">Save</button></div>
+  </div>
+</div>
+
+<!-- NEW CAMPAIGN MODAL -->
+<div class="modal-bg" id="new-campaign-modal">
+  <div class="modal">
+    <h3><i class="ti ti-book"></i> New Campaign</h3>
+    <div class="field"><label>Campaign Name</label><input id="nc-name" type="text" placeholder="e.g. The Shattered Realm"/></div>
+    <div class="field"><label>System</label><select id="nc-system"><option value="5e">D&amp;D 5e</option><option value="pathfinder">Pathfinder 2e</option><option value="osr">OSR</option><option value="other">Other</option></select></div>
+    <div class="field"><label>Description (optional)</label><textarea id="nc-desc" placeholder="A brief premise for this campaign..."></textarea></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal('new-campaign-modal')">Cancel</button><button class="btn primary" onclick="createCampaign()">Create</button></div>
+  </div>
+</div>
+
+<!-- PARENT MODAL -->
+<div class="modal-bg" id="parent-modal">
+  <div class="modal" style="width:320px;">
+    <h3>Assign Parent Node</h3>
+    <div id="parent-list" style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;"></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal('parent-modal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- LINK MODAL -->
+<div class="modal-bg" id="link-modal">
+  <div class="modal" style="width:520px;">
+    <h3 id="link-modal-title"><i class="ti ti-map-pin"></i> Place on Mind Map</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:4px;" id="link-modal-desc"></p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;" id="link-modal-ai-hint"></p>
+    <div id="link-modal-options" style="max-height:260px;overflow-y:auto;"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="linkSkip()">Skip</button>
+      <button class="btn" onclick="linkAddAlone()"><i class="ti ti-map-pin"></i> Add unconnected</button>
+      <button class="btn primary" id="link-confirm-btn" onclick="linkConfirm()" disabled><i class="ti ti-link"></i> Link &amp; add</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL TRANSCRIPT MODAL -->
+<div class="modal-bg" id="manual-modal">
+  <div class="modal" style="width:560px;">
+    <h3><i class="ti ti-keyboard"></i> Paste Session Transcript</h3>
+    <div class="field"><label>Session name (optional)</label><input id="manual-name" type="text" placeholder="e.g. Session 4 — The Tower"/></div>
+    <div class="field"><label>Transcript</label><textarea id="manual-transcript" style="min-height:180px;" placeholder="Paste your session transcript here..."></textarea></div>
+    <div class="modal-btns"><button class="btn" onclick="closeManualModal()">Cancel</button><button class="btn primary" onclick="processManualTranscript()"><i class="ti ti-brain"></i> Analyse</button></div>
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div class="modal-bg" id="player-modal">
+  <div class="modal" style="width:520px;">
+    <h3 id="player-modal-title">Add Player</h3>
+    <input type="hidden" id="ep-id"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Name</label><input id="ep-name" type="text" placeholder="Character name"/></div>
+      <div class="field"><label>Class</label><input id="ep-class" type="text" placeholder="e.g. Fighter"/></div>
+      <div class="field"><label>Subclass</label><input id="ep-subclass" type="text" placeholder="e.g. Champion"/></div>
+      <div class="field"><label>Race</label><input id="ep-race" type="text" placeholder="e.g. Dwarf"/></div>
+      <div class="field"><label>Background</label><input id="ep-background" type="text" placeholder="e.g. Soldier"/></div>
+      <div class="field"><label>Level</label><input id="ep-level" type="number" min="1" max="20" placeholder="1"/></div>
+      <div class="field"><label>Current HP</label><input id="ep-hp" type="number" placeholder="HP"/></div>
+      <div class="field"><label>Max HP</label><input id="ep-maxhp" type="number" placeholder="Max HP"/></div>
+      <div class="field"><label>Armour Class</label><input id="ep-ac" type="number" placeholder="AC"/></div>
+    </div>
+    <div style="margin-bottom:10px;"><label style="font-size:11px;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:6px;">Ability Scores (STR / DEX / CON / INT / WIS / CHA)</label><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;"><input id="ep-str" type="number" min="1" max="30" placeholder="STR" style="padding:6px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;text-align:center;"/><input id="ep-dex" type="number" placeholder="DEX" style="padding:6px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;text-align:center;"/><input id="ep-con" type="number" placeholder="CON" style="padding:6px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;text-align:center;"/><input id="ep-int" type="number" placeholder="INT" style="padding:6px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;text-align:center;"/><input id="ep-wis" type="number" placeholder="WIS" style="padding:6px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;text-align:center;"/><input id="ep-cha" type="number" placeholder="CHA" style="padding:6px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:13px;text-align:center;"/></div></div>
+    <div class="field"><label>Proficiencies</label><input id="ep-prof" type="text" placeholder="Comma-separated proficiencies"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Spellcasting Class</label><input id="ep-sc-class" type="text" placeholder="e.g. Wizard"/></div>
+      <div class="field"><label>Spell Save DC</label><input id="ep-sc-dc" type="number" placeholder="DC"/></div>
+    </div>
+    <div class="field"><label>Equipment</label><input id="ep-equipment" type="text" placeholder="Comma-separated items"/></div>
+    <div class="field"><label>Notes / Traits</label><textarea id="ep-notes" placeholder="Special abilities, personality traits..."></textarea></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal('player-modal')">Cancel</button><button class="btn primary" onclick="savePlayer()">Save</button></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   STORAGE LAYER — localStorage + IndexedDB
+══════════════════════════════════════ */
+let useIDB = false;
+let idbDb = null;
+
+async function initStorage() {
+  try {
+    idbDb = await new Promise((res, rej) => {
+      const req = indexedDB.open('dnd-tracker', 2);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('campaigns')) db.createObjectStore('campaigns', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'k' });
+      };
+      req.onsuccess = e => res(e.target.result);
+      req.onerror = () => rej(req.error);
+    });
+    useIDB = true;
+    updateStorageBadge();
+    return true;
+  } catch (e) {
+    useIDB = false;
+    updateStorageBadge();
+    return false;
+  }
+}
+
+function updateStorageBadge() {
+  const badge = document.getElementById('storage-badge');
+  if (!badge) return;
+  if (useIDB) {
+    badge.textContent = 'IndexedDB';
+    badge.className = 'stor-badge idb';
+    badge.title = 'Using IndexedDB — unlimited storage';
+  } else {
+    badge.textContent = 'localStorage';
+    badge.className = 'stor-badge ls';
+    badge.title = 'Using localStorage — ~5MB limit';
+  }
+}
+
+async function storageSave(key, value) {
+  if (useIDB && idbDb) {
+    return new Promise((res, rej) => {
+      const tx = idbDb.transaction('meta', 'readwrite');
+      tx.objectStore('meta').put({ k: key, v: value });
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  } else {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+}
+
+async function storageLoad(key) {
+  if (useIDB && idbDb) {
+    return new Promise((res, rej) => {
+      const tx = idbDb.transaction('meta', 'readonly');
+      const req = tx.objectStore('meta').get(key);
+      req.onsuccess = () => res(req.result ? req.result.v : null);
+      req.onerror = () => rej(req.error);
+    });
+  } else {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+  }
+}
+
+async function saveCampaign(campaign) {
+  if (useIDB && idbDb) {
+    return new Promise((res, rej) => {
+      const tx = idbDb.transaction('campaigns', 'readwrite');
+      tx.objectStore('campaigns').put(campaign);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  } else {
+    const all = loadAllCampaignsLS();
+    const idx = all.findIndex(c => c.id === campaign.id);
+    if (idx >= 0) all[idx] = campaign; else all.push(campaign);
+    try { localStorage.setItem('dnd-campaigns', JSON.stringify(all)); } catch (e) {}
+  }
+}
+
+async function loadAllCampaigns() {
+  if (useIDB && idbDb) {
+    return new Promise((res, rej) => {
+      const tx = idbDb.transaction('campaigns', 'readonly');
+      const req = tx.objectStore('campaigns').getAll();
+      req.onsuccess = () => res(req.result || []);
+      req.onerror = () => rej(req.error);
+    });
+  } else {
+    return loadAllCampaignsLS();
+  }
+}
+
+function loadAllCampaignsLS() {
+  try { return JSON.parse(localStorage.getItem('dnd-campaigns') || '[]'); } catch (e) { return []; }
+}
+
+async function deleteCampaignFromStorage(id) {
+  if (useIDB && idbDb) {
+    return new Promise((res, rej) => {
+      const tx = idbDb.transaction('campaigns', 'readwrite');
+      tx.objectStore('campaigns').delete(id);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  } else {
+    const all = loadAllCampaignsLS().filter(c => c.id !== id);
+    try { localStorage.setItem('dnd-campaigns', JSON.stringify(all)); } catch (e) {}
+  }
+}
+
+/* ══════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════ */
+const TAG_COLORS = {
+  plot:{bg:'#2a1f40',text:'#AFA9EC'}, npc:{bg:'#0f2a20',text:'#5DCAA5'},
+  location:{bg:'#2a1508',text:'#EF9F27'}, item:{bg:'#2a0808',text:'#F09595'},
+  encounter:{bg:'#1a0808',text:'#e08080'}, lore:{bg:'#0a1a2a',text:'#85B7EB'}
+};
+const STATUS = {
+  unused:{label:'Unused',bg:'#1e1a10',text:'#8a7a50',next:'wip'},
+  wip:{label:'In Progress',bg:'#1a1408',text:'#c9a84c',next:'used'},
+  used:{label:'Used',bg:'#0a1a10',text:'#5DCAA5',next:'unused'}
+};
+const TYPE_MAP = {'plot twist':'plot','NPC':'npc','location':'location','magic item':'item','random encounter':'encounter','faction':'lore','mystery hook':'plot'};
+const DP_TYPES = ['npc','location','item','faction','creature','object','situation'];
+const DP_COLORS = {npc:'#5DCAA5',location:'#EF9F27',item:'#F09595',faction:'#85B7EB',creature:'#e08080',object:'#c9a84c',situation:'#a0c8f0'};
+const DP_TO_IDEA = {npc:'npc',location:'location',item:'item',faction:'lore',creature:'encounter',object:'item',situation:'plot'};
+const CONDITIONS = ['Blinded','Charmed','Deafened','Exhausted','Frightened','Grappled','Incapacitated','Invisible','Paralyzed','Petrified','Poisoned','Prone','Restrained','Stunned','Unconscious'];
+const COND_COLORS = {Blinded:'#888',Charmed:'#e08080',Deafened:'#aaa',Exhausted:'#c9a84c',Frightened:'#AFA9EC',Grappled:'#EF9F27',Incapacitated:'#F09595',Invisible:'#5DCAA5',Paralyzed:'#85B7EB',Petrified:'#a0c8f0',Poisoned:'#7ac95a',Prone:'#c9a84c',Restrained:'#EF9F27',Stunned:'#F09595',Unconscious:'#e08080'};
+const ABILITY_NAMES = ['STR','DEX','CON','INT','WIS','CHA'];
+
+/* ══════════════════════════════════════
+   CAMPAIGN STATE
+══════════════════════════════════════ */
+let campaigns = [];
+let activeCampaignId = null;
+let nextCampaignId = 1;
+
+function newCampaign(name) {
+  return {
+    id: nextCampaignId++,
+    name: name || 'New Campaign',
+    created: new Date().toLocaleDateString('en-GB'),
+    ideas: [
+      {id:1,title:'The Sunken Archive',type:'location',notes:'An ancient library beneath a lake.',status:'unused'},
+      {id:2,title:'Mirela the Fence',type:'npc',notes:"A cheerful halfling who knows everyone's secrets.",status:'unused'},
+    ],
+    nextId: 3,
+    mapNodes: [], connections: [], linkQueue: [],
+    sessions: [], nextSessionId: 1,
+    players: [], nextPlayerId: 1,
+    combat: { active: false, round: 1, turnIdx: 0, combatants: [], log: [], collapsed: false }
+  };
+}
+
+function getC() { return campaigns.find(c => c.id === activeCampaignId) || campaigns[0]; }
+
+async function saveActive() {
+  const c = getC(); if (!c) return;
+  await saveCampaign(c);
+  await storageSave('dnd-meta', { activeCampaignId, nextCampaignId });
+}
+
+async function loadData() {
+  await initStorage();
+  campaigns = await loadAllCampaigns();
+  const meta = await storageLoad('dnd-meta');
+  if (meta) { activeCampaignId = meta.activeCampaignId; nextCampaignId = meta.nextCampaignId || (campaigns.length + 1); }
+  const keys = await storageLoad('dnd-keys');
+  if (keys) {
+    if (keys.ant) document.getElementById('anthropic-key').value = keys.ant;
+    if (keys.oai) document.getElementById('openai-key').value = keys.oai;
+  }
+  if (!campaigns.length) { const c = newCampaign('My First Campaign'); campaigns.push(c); activeCampaignId = c.id; await saveActive(); }
+  if (!campaigns.find(c => c.id === activeCampaignId)) activeCampaignId = campaigns[0].id;
+  renderCampaignSwitcher();
+  renderAll();
+}
+
+function renderAll() {
+  renderIdeas(); renderMapPalette(); renderMapNodes();
+  renderSessions(); updateLinkBanner();
+  renderPlayers(); renderCombat();
+}
+
+/* ══════════════════════════════════════
+   CAMPAIGN SWITCHER & MANAGEMENT
+══════════════════════════════════════ */
+function renderCampaignSwitcher() {
+  const sel = document.getElementById('campaign-select');
+  if (!sel) return;
+  sel.innerHTML = campaigns.map(c => `<option value="${c.id}" ${c.id === activeCampaignId ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('');
+}
+
+async function switchCampaign(id) {
+  activeCampaignId = parseInt(id);
+  await storageSave('dnd-meta', { activeCampaignId, nextCampaignId });
+  renderAll();
+}
+
+function openNewCampaignModal() {
+  document.getElementById('nc-name').value = '';
+  document.getElementById('nc-system').value = '5e';
+  document.getElementById('nc-desc').value = '';
+  document.getElementById('new-campaign-modal').classList.add('open');
+  setTimeout(() => document.getElementById('nc-name').focus(), 50);
+}
+
+async function createCampaign() {
+  const name = document.getElementById('nc-name').value.trim();
+  if (!name) { document.getElementById('nc-name').focus(); return; }
+  const c = newCampaign(name);
+  c.system = document.getElementById('nc-system').value;
+  c.description = document.getElementById('nc-desc').value.trim();
+  campaigns.push(c);
+  activeCampaignId = c.id;
+  await saveActive();
+  renderCampaignSwitcher();
+  renderAll();
+  closeModal('new-campaign-modal');
+}
+
+async function deleteCampaign() {
+  const c = getC(); if (!c) return;
+  if (!confirm(`Delete campaign "${c.name}"? This cannot be undone.`)) return;
+  await deleteCampaignFromStorage(c.id);
+  campaigns = campaigns.filter(x => x.id !== c.id);
+  if (!campaigns.length) { const nc = newCampaign('My Campaign'); campaigns.push(nc); activeCampaignId = nc.id; }
+  else activeCampaignId = campaigns[0].id;
+  await storageSave('dnd-meta', { activeCampaignId, nextCampaignId });
+  renderCampaignSwitcher();
+  renderAll();
+}
+
+async function renameCampaign() {
+  const c = getC(); if (!c) return;
+  const name = prompt('Campaign name:', c.name);
+  if (!name?.trim()) return;
+  c.name = name.trim();
+  await saveActive();
+  renderCampaignSwitcher();
+}
+
+/* ══════════════════════════════════════
+   NAV
+══════════════════════════════════════ */
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'map') { renderMapPalette(); renderMapNodes(); }
+  if (name === 'sessions') renderSessions();
+  if (name === 'players') renderPlayers();
+  if (name === 'combat') renderCombat();
+}
+
+function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function saveKeys() {
+  try { localStorage.setItem('dnd-keys', JSON.stringify({ ant: document.getElementById('anthropic-key').value.trim(), oai: document.getElementById('openai-key').value.trim() })); } catch (e) {}
+}
+function toggleKeyVis(inId, icId) { const i = document.getElementById(inId); const ic = document.getElementById(icId); if (i.type === 'password') { i.type = 'text'; ic.className = 'ti ti-eye-off'; } else { i.type = 'password'; ic.className = 'ti ti-eye'; } }
+function getAntKey() { const v = document.getElementById('anthropic-key').value.trim(); if (!v) alert('Please enter your Anthropic API key in the Sessions tab.'); return v; }
+function getOaiKey() { return document.getElementById('openai-key').value.trim(); }
+
+async function exportData() {
+  const data = { campaigns, activeCampaignId, nextCampaignId };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dnd-tracker-export.json'; a.click();
+}
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = async ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.campaigns) { campaigns = d.campaigns; activeCampaignId = d.activeCampaignId || d.campaigns[0]?.id; nextCampaignId = d.nextCampaignId || (campaigns.length + 1); for (const c of campaigns) await saveCampaign(c); await storageSave('dnd-meta', { activeCampaignId, nextCampaignId }); renderCampaignSwitcher(); renderAll(); }
+    } catch { alert('Could not read file.'); }
+  };
+  r.readAsText(file); e.target.value = '';
+}
+
+/* ══════════════════════════════════════
+   IDEAS
+══════════════════════════════════════ */
+let currentFilter = 'all'; let editingIdeaId = null;
+function setFilter(f, btn) { currentFilter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderIdeas(); }
+function renderIdeas() {
+  const c = getC(); if (!c) return;
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const filtered = c.ideas.filter(i => {
+    if (currentFilter !== 'all' && i.type !== currentFilter) return false;
+    if (q && !i.title.toLowerCase().includes(q) && !(i.notes || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const si = document.getElementById('stat-total'); if (si) si.textContent = c.ideas.length;
+  const su = document.getElementById('stat-unused'); if (su) su.textContent = c.ideas.filter(i => i.status === 'unused').length;
+  const sw = document.getElementById('stat-wip'); if (sw) sw.textContent = c.ideas.filter(i => i.status === 'wip').length;
+  const sd = document.getElementById('stat-used'); if (sd) sd.textContent = c.ideas.filter(i => i.status === 'used').length;
+  const grid = document.getElementById('idea-grid'); if (!grid) return;
+  if (!filtered.length) { grid.innerHTML = '<div class="empty"><i class="ti ti-ghost-2"></i>No ideas here yet</div>'; return; }
+  grid.innerHTML = filtered.map(idea => {
+    const tc = TAG_COLORS[idea.type] || TAG_COLORS.lore;
+    const st = STATUS[idea.status] || STATUS.unused;
+    return `<div class="idea-card"><div class="idea-card-head"><span class="tag" style="background:${tc.bg};color:${tc.text};">${idea.type}</span><button class="status-badge" style="background:${st.bg};color:${st.text};border:none;" onclick="cycleStatus(${idea.id})">${st.label}</button></div><h3>${escHtml(idea.title)}</h3><p>${escHtml(idea.notes || 'No notes.')}</p><div class="actions"><button class="btn sm" onclick="openIdeaModal(${idea.id})"><i class="ti ti-edit"></i> Edit</button><button class="btn sm danger" onclick="deleteIdea(${idea.id})"><i class="ti ti-trash"></i></button></div></div>`;
+  }).join('');
+}
+async function cycleStatus(id) { const c = getC(); const i = c.ideas.find(x => x.id === id); if (i) { i.status = STATUS[i.status].next; await saveActive(); renderIdeas(); } }
+async function deleteIdea(id) {
+  if (!confirm('Delete this idea?')) return;
+  const c = getC();
+  c.ideas = c.ideas.filter(i => i.id !== id);
+  c.mapNodes = c.mapNodes.filter(n => n.id !== id);
+  c.connections = c.connections.filter(x => x.a !== id && x.b !== id);
+  await saveActive(); renderIdeas(); renderMapPalette(); renderMapNodes();
+}
+function openIdeaModal(id) {
+  const c = getC(); editingIdeaId = id || null;
+  document.getElementById('modal-title').textContent = id ? 'Edit Idea' : 'Add Idea';
+  if (id) { const i = c.ideas.find(x => x.id === id); document.getElementById('m-title').value = i.title; document.getElementById('m-type').value = i.type; document.getElementById('m-notes').value = i.notes || ''; document.getElementById('m-status').value = i.status; }
+  else { document.getElementById('m-title').value = ''; document.getElementById('m-notes').value = ''; document.getElementById('m-type').value = 'plot'; document.getElementById('m-status').value = 'unused'; }
+  document.getElementById('idea-modal').classList.add('open');
+  setTimeout(() => document.getElementById('m-title').focus(), 50);
+}
+async function saveIdea() {
+  const c = getC();
+  const title = document.getElementById('m-title').value.trim(); if (!title) { document.getElementById('m-title').focus(); return; }
+  const idea = { id: editingIdeaId || c.nextId++, title, type: document.getElementById('m-type').value, notes: document.getElementById('m-notes').value.trim(), status: document.getElementById('m-status').value };
+  if (editingIdeaId) { const idx = c.ideas.findIndex(i => i.id === editingIdeaId); c.ideas[idx] = idea; } else c.ideas.push(idea);
+  closeModal('idea-modal'); await saveActive(); renderIdeas(); renderMapPalette();
+}
+
+/* ══════════════════════════════════════
+   GENERATE
+══════════════════════════════════════ */
+let genText = ''; let genType = '';
+async function generateIdea() {
+  const type = document.getElementById('gen-type').value; const theme = document.getElementById('gen-theme').value.trim();
+  genType = type; const el = document.getElementById('gen-result'); el.className = 'gen-result placeholder'; el.textContent = 'Generating...';
+  const key = getAntKey(); if (!key) return;
+  const prompt = `You are a creative D&D campaign assistant. Generate one original ${type} idea${theme ? ' with the theme: ' + theme : ''}. Be evocative and specific. Give it a name/title and 2-3 sentences of description. Plain text only, no markdown.`;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }) });
+    const data = await res.json(); genText = data.content?.map(b => b.text || '').join('') || 'Error: ' + (data.error?.message || '');
+    el.className = 'gen-result'; el.textContent = genText;
+  } catch { el.className = 'gen-result'; el.textContent = 'Could not generate. Check your API key.'; }
+}
+async function saveGenerated() {
+  if (!genText) return;
+  const c = getC(); const lines = genText.split('\n').filter(Boolean);
+  const title = lines[0].replace(/^[\*\#\-]+\s*/, '').trim().slice(0, 80); const notes = lines.slice(1).join(' ').trim();
+  c.ideas.push({ id: c.nextId++, title: title || 'Generated idea', type: TYPE_MAP[genType] || 'plot', notes, status: 'unused' });
+  await saveActive(); renderIdeas(); renderMapPalette();
+  const hist = document.getElementById('gen-history'); const div = document.createElement('div'); div.className = 'hist-item'; div.textContent = 'Saved: ' + (title || 'Generated idea'); hist.prepend(div);
+}
+
+/* ══════════════════════════════════════
+   MAP
+══════════════════════════════════════ */
+let connectingMode = false; let connectFirst = null; let selectedNodeId = null; let ctxTargetId = null;
+function renderMapPalette() {
+  const c = getC(); const pal = document.getElementById('map-palette'); if (!pal) return;
+  if (!c.ideas.length) { pal.innerHTML = '<span style="font-size:12px;color:var(--text3);">No ideas yet</span>'; return; }
+  pal.innerHTML = c.ideas.map(idea => { const onMap = c.mapNodes.find(n => n.id === idea.id); return `<button onclick="toggleOnMap(${idea.id})" style="padding:3px 10px;font-size:11px;border:1px solid ${onMap ? 'var(--gold)' : 'var(--border)'};border-radius:99px;background:${onMap ? 'rgba(201,168,76,.15)' : 'transparent'};cursor:pointer;color:${onMap ? 'var(--gold)' : 'var(--text2)'};font-family:inherit;">${escHtml(idea.title)}</button>`; }).join('');
+}
+async function toggleOnMap(id) {
+  const c = getC();
+  if (c.mapNodes.find(n => n.id === id)) { c.mapNodes.forEach(n => { if (n.parentId === id) n.parentId = null; }); c.mapNodes = c.mapNodes.filter(n => n.id !== id); c.connections = c.connections.filter(x => x.a !== id && x.b !== id); }
+  else { const area = document.getElementById('map-area'); const r = area.getBoundingClientRect(); c.mapNodes.push({ id, x: 30 + Math.random() * Math.max(r.width - 200, 80), y: 30 + Math.random() * Math.max(r.height - 120, 80), mapNote: '', isSuper: false, parentId: null, collapsed: false, fromSession: false }); }
+  renderMapPalette(); renderMapNodes(); await saveActive();
+}
+function visibleNodes() {
+  const c = getC();
+  return c.mapNodes.filter(node => {
+    if (!node.parentId) return true;
+    const parent = c.mapNodes.find(n => n.id === node.parentId);
+    return !parent || !parent.isSuper || !parent.collapsed;
+  });
+}
+function renderMapNodes() {
+  document.querySelectorAll('.map-node').forEach(n => n.remove());
+  const c = getC(); const visible = visibleNodes();
+  const empty = document.getElementById('map-empty'); if (empty) empty.style.display = c.mapNodes.length ? 'none' : 'flex';
+  const area = document.getElementById('map-area'); if (!area) return;
+  visible.forEach(node => {
+    const idea = c.ideas.find(i => i.id === node.id); if (!idea) return;
+    const tc = TAG_COLORS[idea.type] || TAG_COLORS.lore;
+    const children = c.mapNodes.filter(n => n.parentId === node.id);
+    const el = document.createElement('div');
+    el.className = 'map-node' + (node.isSuper ? ' is-super' : '') + (node.parentId ? ' is-child' : '') + (node.fromSession ? ' from-session' : '');
+    el.id = 'mnode-' + node.id; el.style.left = node.x + 'px'; el.style.top = node.y + 'px';
+    let inner = `<div class="node-tag" style="color:${tc.text};">${idea.type}</div><h4>${escHtml(idea.title)}</h4>`;
+    if (node.mapNote) inner += `<div class="node-meta"><i class="ti ti-notes" style="font-size:9px;"></i> notes</div>`;
+    if (node.fromSession) inner += `<div class="node-meta"><i class="ti ti-microphone" style="font-size:9px;"></i> session</div>`;
+    if (node.isSuper) { const cnt = children.length; inner += `<div class="super-badge" onclick="toggleCollapse(${node.id},event)"><i class="ti ti-${node.collapsed ? 'chevron-right' : 'chevron-down'}" style="font-size:9px;"></i>${node.collapsed ? cnt + ' hidden' : cnt + ' child' + (cnt !== 1 ? 'ren' : '')}</div>`; }
+    el.innerHTML = inner;
+    makeDraggable(el, node, area);
+    el.addEventListener('click', () => handleNodeClick(node.id));
+    el.addEventListener('contextmenu', e => { e.preventDefault(); showCtxMenu(e, node.id); });
+    area.appendChild(el);
+  });
+  drawConnections();
+}
+async function toggleCollapse(id, e) { e.stopPropagation(); const c = getC(); const node = c.mapNodes.find(n => n.id === id); if (node) { node.collapsed = !node.collapsed; await saveActive(); renderMapNodes(); } }
+function makeDraggable(el, node, area) {
+  let ox, oy, dragging = false, moved = false;
+  el.addEventListener('mousedown', e => { if (e.button !== 0) return; dragging = true; moved = false; ox = e.clientX - node.x; oy = e.clientY - node.y; el.classList.add('dragging'); e.preventDefault(); });
+  document.addEventListener('mousemove', e => { if (!dragging) return; moved = true; const r = area.getBoundingClientRect(); node.x = Math.max(0, Math.min(r.width - 180, e.clientX - ox - r.left)); node.y = Math.max(0, Math.min(r.height - 90, e.clientY - oy - r.top)); el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; drawConnections(); });
+  document.addEventListener('mouseup', () => { if (dragging) { dragging = false; el.classList.remove('dragging'); if (moved) saveActive(); } });
+}
+function toggleConnectMode() {
+  connectingMode = !connectingMode; connectFirst = null;
+  document.querySelectorAll('.map-node').forEach(n => n.classList.remove('selected'));
+  const btn = document.getElementById('connect-btn');
+  btn.style.borderColor = connectingMode ? 'var(--gold)' : ''; btn.style.color = connectingMode ? 'var(--gold)' : '';
+  btn.innerHTML = connectingMode ? '<i class="ti ti-x"></i> Cancel' : '<i class="ti ti-git-merge"></i> Connect';
+}
+async function handleNodeClick(id) {
+  hideCtxMenu();
+  if (connectingMode) {
+    if (!connectFirst) { connectFirst = id; document.getElementById('mnode-' + id).classList.add('selected'); return; }
+    if (connectFirst === id) { document.getElementById('mnode-' + id).classList.remove('selected'); connectFirst = null; return; }
+    const c = getC(); const exists = c.connections.find(x => (x.a === connectFirst && x.b === id) || (x.a === id && x.b === connectFirst));
+    if (!exists) c.connections.push({ a: connectFirst, b: id });
+    document.getElementById('mnode-' + connectFirst).classList.remove('selected'); connectFirst = null; drawConnections(); await saveActive();
+  } else { openNotesPanel(id); }
+}
+function drawConnections() {
+  const svg = document.getElementById('svg-conn'); if (!svg) return; svg.innerHTML = '';
+  const c = getC(); const visible = visibleNodes(); const visIds = new Set(visible.map(n => n.id));
+  visible.forEach(node => {
+    if (!node.parentId) return;
+    const parent = c.mapNodes.find(n => n.id === node.parentId); if (!parent || !visIds.has(parent.id)) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', parent.x + 85); line.setAttribute('y1', parent.y + 35); line.setAttribute('x2', node.x + 85); line.setAttribute('y2', node.y + 20);
+    line.setAttribute('stroke', 'var(--gold)'); line.setAttribute('stroke-width', '1.5'); line.setAttribute('opacity', '0.5'); svg.appendChild(line);
+  });
+  c.connections.forEach(x => {
+    if (!visIds.has(x.a) || !visIds.has(x.b)) return;
+    const na = c.mapNodes.find(n => n.id === x.a); const nb = c.mapNodes.find(n => n.id === x.b); if (!na || !nb) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', na.x + 85); line.setAttribute('y1', na.y + 30); line.setAttribute('x2', nb.x + 85); line.setAttribute('y2', nb.y + 30);
+    line.setAttribute('stroke', 'var(--accent)'); line.setAttribute('stroke-width', '1.5'); line.setAttribute('stroke-dasharray', '5,4'); line.setAttribute('opacity', '0.6'); svg.appendChild(line);
+  });
+}
+async function clearConnections() { const c = getC(); c.connections = []; drawConnections(); await saveActive(); }
+async function clearMap() { if (!confirm('Clear the entire mind map?')) return; const c = getC(); c.mapNodes = []; c.connections = []; selectedNodeId = null; document.getElementById('node-notes-panel').classList.remove('open'); renderMapNodes(); renderMapPalette(); await saveActive(); }
+function showCtxMenu(e, id) {
+  ctxTargetId = id; const menu = document.getElementById('ctx-menu'); menu.style.display = 'block';
+  const area = document.getElementById('map-area'); const ar = area.getBoundingClientRect();
+  let x = e.clientX - ar.left, y = e.clientY - ar.top;
+  if (x + 175 > ar.width) x = ar.width - 180; if (y + 165 > ar.height) y = ar.height - 170;
+  menu.style.left = x + 'px'; menu.style.top = y + 'px'; area.style.position = 'relative'; area.appendChild(menu);
+}
+function hideCtxMenu() { const m = document.getElementById('ctx-menu'); if (m) m.style.display = 'none'; }
+document.addEventListener('click', e => { if (!e.target.closest('#ctx-menu')) hideCtxMenu(); });
+async function ctxMakeSuper() { const c = getC(); const n = c.mapNodes.find(x => x.id === ctxTargetId); if (n) { n.isSuper = true; n.collapsed = false; } hideCtxMenu(); await saveActive(); renderMapNodes(); }
+async function ctxDemote() { const c = getC(); const n = c.mapNodes.find(x => x.id === ctxTargetId); if (n) { n.isSuper = false; n.collapsed = false; c.mapNodes.forEach(x => { if (x.parentId === ctxTargetId) x.parentId = null; }); } hideCtxMenu(); await saveActive(); renderMapNodes(); }
+async function ctxAssignParent() {
+  hideCtxMenu(); const c = getC(); const supers = c.mapNodes.filter(n => n.isSuper && n.id !== ctxTargetId);
+  if (!supers.length) { alert('No super nodes on the map yet.'); return; }
+  const list = document.getElementById('parent-list');
+  list.innerHTML = supers.map(sn => { const idea = c.ideas.find(i => i.id === sn.id); return `<button class="btn" style="justify-content:flex-start;" onclick="assignParent(${sn.id})"><i class="ti ti-crown" style="color:var(--gold);"></i>${escHtml(idea ? idea.title : 'Unknown')}</button>`; }).join('');
+  document.getElementById('parent-modal').classList.add('open');
+}
+async function assignParent(parentId) { const c = getC(); const n = c.mapNodes.find(x => x.id === ctxTargetId); if (n) n.parentId = parentId; closeModal('parent-modal'); await saveActive(); renderMapNodes(); }
+async function ctxUnassignParent() { const c = getC(); const n = c.mapNodes.find(x => x.id === ctxTargetId); if (n) n.parentId = null; hideCtxMenu(); await saveActive(); renderMapNodes(); }
+async function ctxRemoveFromMap() {
+  hideCtxMenu(); const c = getC();
+  c.mapNodes.forEach(n => { if (n.parentId === ctxTargetId) n.parentId = null; });
+  c.mapNodes = c.mapNodes.filter(n => n.id !== ctxTargetId);
+  c.connections = c.connections.filter(x => x.a !== ctxTargetId && x.b !== ctxTargetId);
+  await saveActive(); renderMapPalette(); renderMapNodes();
+}
+function openNotesPanel(id) {
+  selectedNodeId = id; const c = getC();
+  document.querySelectorAll('.map-node').forEach(n => n.classList.remove('selected'));
+  document.getElementById('mnode-' + id)?.classList.add('selected');
+  const idea = c.ideas.find(i => i.id === id); const node = c.mapNodes.find(n => n.id === id);
+  document.getElementById('node-notes-title').textContent = idea ? idea.title : 'Node notes';
+  document.getElementById('node-notes-textarea').value = node?.mapNote || '';
+  document.getElementById('node-notes-panel').classList.add('open');
+  document.getElementById('node-notes-textarea').focus();
+}
+function closeNotesPanel() { document.getElementById('node-notes-panel').classList.remove('open'); if (selectedNodeId) document.getElementById('mnode-' + selectedNodeId)?.classList.remove('selected'); selectedNodeId = null; }
+async function saveNodeNotes() {
+  if (!selectedNodeId) return; const c = getC(); const node = c.mapNodes.find(n => n.id === selectedNodeId);
+  if (node) node.mapNote = document.getElementById('node-notes-textarea').value.trim();
+  await saveActive(); renderMapNodes(); document.getElementById('mnode-' + selectedNodeId)?.classList.add('selected');
+  const flash = document.createElement('span'); flash.style.cssText = 'font-size:11px;color:var(--green);margin-left:8px;'; flash.textContent = 'Saved';
+  document.querySelector('.node-notes-panel .pna').appendChild(flash); setTimeout(() => flash.remove(), 2000);
+}
+async function deleteNodeNotes() {
+  if (!selectedNodeId || !confirm('Delete notes?')) return; const c = getC(); const node = c.mapNodes.find(n => n.id === selectedNodeId);
+  if (node) node.mapNote = ''; document.getElementById('node-notes-textarea').value = ''; await saveActive(); renderMapNodes(); document.getElementById('mnode-' + selectedNodeId)?.classList.add('selected');
+}
+async function saveMapImage() {
+  const c = getC(); if (!c.mapNodes.length) { alert('Place some nodes first!'); return; }
+  const btn = document.getElementById('save-img-btn'); btn.innerHTML = '<i class="ti ti-loader"></i> Rendering...'; btn.disabled = true;
+  try {
+    const area = document.getElementById('map-area'); const canvas = await html2canvas(area, { backgroundColor: '#1e1a14', scale: 2, useCORS: true, logging: false });
+    const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); const d = new Date();
+    a.download = 'mind-map-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '.png'; a.click();
+  } catch { alert('Could not render. Try again.'); }
+  btn.innerHTML = '<i class="ti ti-camera"></i> Save image'; btn.disabled = false;
+}
+
+/* ══════════════════════════════════════
+   SESSIONS
+══════════════════════════════════════ */
+let linkQueueIdx = 0; let linkSelectedNodeId = null;
+function onDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function onDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
+function onDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) processAudioFile(f); }
+function handleAudioUpload(e) { const f = e.target.files[0]; if (f) processAudioFile(f); e.target.value = ''; }
+function setProgress(pct, label, step) {
+  document.getElementById('progress-box').classList.add('active');
+  document.getElementById('progress-fill').style.width = pct + '%'; document.getElementById('progress-label').textContent = label;
+  const steps = ['transcribe', 'analyse', 'extract', 'map']; const si = steps.indexOf(step);
+  steps.forEach((s, i) => { const el = document.getElementById('step-' + s); if (i < si) el.className = 'progress-step done'; else if (i === si) el.className = 'progress-step active'; else el.className = 'progress-step'; });
+}
+function hideProgress() { document.getElementById('progress-box').classList.remove('active'); }
+async function processAudioFile(file) {
+  const oaiKey = getOaiKey(); const antKey = getAntKey(); if (!antKey) return;
+  setProgress(5, 'Preparing audio...', 'transcribe');
+  if (oaiKey) {
+    try { setProgress(15, 'Transcribing with Whisper...', 'transcribe'); const transcript = await transcribeWithWhisper(file, oaiKey); setProgress(35, 'Transcription complete...', 'analyse'); await analyseTranscript(transcript, file.name.replace(/\.[^.]+$/, ''), antKey); }
+    catch (err) { hideProgress(); alert('Whisper error: ' + err.message + '\n\nFalling back to manual.'); openManualTranscriptWithName(file.name.replace(/\.[^.]+$/, '')); }
+  } else { hideProgress(); openManualTranscriptWithName(file.name.replace(/\.[^.]+$/, '')); }
+}
+async function transcribeWithWhisper(file, oaiKey) {
+  if (file.size > 25 * 1024 * 1024) throw new Error('File exceeds 25MB Whisper limit.');
+  const form = new FormData(); form.append('file', file); form.append('model', 'whisper-1'); form.append('response_format', 'text');
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': 'Bearer ' + oaiKey }, body: form });
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || 'Whisper error ' + res.status); }
+  return await res.text();
+}
+function openManualTranscript(e) { if (e) e.stopPropagation(); document.getElementById('manual-name').value = ''; document.getElementById('manual-transcript').value = ''; document.getElementById('manual-modal').classList.add('open'); }
+function openManualTranscriptWithName(name) { document.getElementById('manual-name').value = name; document.getElementById('manual-transcript').value = ''; document.getElementById('manual-modal').classList.add('open'); }
+function closeManualModal() { closeModal('manual-modal'); }
+async function processManualTranscript() {
+  const transcript = document.getElementById('manual-transcript').value.trim(); if (!transcript) { alert('Please paste a transcript.'); return; }
+  const name = document.getElementById('manual-name').value.trim(); const antKey = getAntKey(); if (!antKey) return;
+  closeManualModal(); setProgress(35, 'Analysing...', 'analyse'); await analyseTranscript(transcript, name || 'Session', antKey);
+}
+async function analyseTranscript(transcript, filename, antKey) {
+  setProgress(48, 'Claude is reading the session...', 'analyse');
+  const c = getC();
+  const prompt = `You are an expert D&D assistant. Analyse this session transcript and return ONLY a raw JSON object (no markdown fences, no preamble) with these exact fields:
+{"sessionName":"short evocative title","keyEvents":["one-sentence event 1","event 2"],"fullSummary":"long multi-paragraph scene-by-scene narrative","dataPoints":{"npc":[{"name":"","description":""}],"location":[{"name":"","description":""}],"item":[{"name":"","description":""}],"faction":[{"name":"","description":""}],"creature":[{"name":"","description":""}],"object":[{"name":"","description":""}],"situation":[{"name":"","description":""}]},"mapSuggestions":[{"entityName":"","entityType":"npc|location|item|faction|creature|situation","suggestedParentName":"","confidence":"high|medium|low","reason":""}]}
+Rules: keyEvents 4-8 entries. fullSummary at least 3 paragraphs. Only include entities from the transcript. mapSuggestions only between entities in this transcript.
+TRANSCRIPT:\n${transcript.slice(0, 15000)}`;
+  setProgress(62, 'Extracting entities...', 'extract');
+  let parsed;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': antKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }) });
+    const data = await res.json(); let raw = data.content?.map(b => b.text || '').join('').trim() || '';
+    raw = raw.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim(); parsed = JSON.parse(raw);
+  } catch (err) { hideProgress(); alert('Analysis failed: ' + (err.message || err)); return; }
+  setProgress(80, 'Building record...', 'map');
+  const session = { id: c.nextSessionId++, number: c.sessions.length + 1, name: parsed.sessionName || filename, date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), transcript, keyEvents: Array.isArray(parsed.keyEvents) ? parsed.keyEvents : [], fullSummary: parsed.fullSummary || '', dataPoints: parsed.dataPoints || {}, mapSuggestions: parsed.mapSuggestions || [] };
+  c.sessions.unshift(session);
+  setProgress(90, 'Adding entities...', 'map');
+  buildLinkQueue(session);
+  setProgress(100, 'Done!', 'map');
+  await saveActive();
+  setTimeout(() => { hideProgress(); renderSessions(); updateLinkBanner(); }, 700);
+}
+function buildLinkQueue(session) {
+  const c = getC();
+  DP_TYPES.forEach(type => {
+    (session.dataPoints[type] || []).forEach(dp => {
+      if (!dp.name) return;
+      let idea = c.ideas.find(i => i.title.toLowerCase() === dp.name.toLowerCase());
+      if (!idea) { const id = c.nextId++; idea = { id, title: dp.name, type: DP_TO_IDEA[type] || 'lore', notes: dp.description || 'From ' + session.name, status: 'unused', fromSessionId: session.id }; c.ideas.push(idea); }
+      const onMap = c.mapNodes.find(n => n.id === idea.id); const queued = c.linkQueue.find(q => q.ideaId === idea.id && !q.processed);
+      if (!onMap && !queued) { const sugg = session.mapSuggestions?.find(s => s.entityName?.toLowerCase() === dp.name.toLowerCase()); c.linkQueue.push({ ideaId: idea.id, name: dp.name, type, sessionId: session.id, sessionName: session.name, suggestedParentName: sugg?.suggestedParentName || '', aiReason: sugg?.reason || '', confidence: sugg?.confidence || 'low', processed: false }); }
+    });
+  });
+  renderIdeas(); renderMapPalette();
+}
+function updateLinkBanner() {
+  const c = getC(); const pending = (c.linkQueue || []).filter(q => !q.processed);
+  const banner = document.getElementById('link-queue-banner'); if (!banner) return;
+  if (pending.length) { banner.style.display = 'flex'; document.getElementById('lq-count').textContent = pending.length; } else banner.style.display = 'none';
+}
+function startLinkQueue() { const c = getC(); const next = c.linkQueue.findIndex(q => !q.processed); if (next === -1) { alert('All placed!'); return; } linkQueueIdx = next; showLinkPrompt(c.linkQueue[linkQueueIdx]); }
+function showLinkPrompt(item) {
+  if (!item) { closeModal('link-modal'); updateLinkBanner(); return; }
+  linkSelectedNodeId = null; document.getElementById('link-confirm-btn').disabled = true;
+  const c = getC(); const idea = c.ideas.find(i => i.id === item.ideaId); const tc = TAG_COLORS[idea?.type || 'lore'] || TAG_COLORS.lore;
+  const remaining = c.linkQueue.filter(q => !q.processed).length;
+  document.getElementById('link-modal-title').innerHTML = '<i class="ti ti-map-pin"></i> Place on Mind Map <span style="font-size:12px;color:var(--text3);font-weight:400;">(' + remaining + ' remaining)</span>';
+  document.getElementById('link-modal-desc').innerHTML = '<span class="tag" style="background:' + tc.bg + ';color:' + tc.text + ';">' + item.type + '</span> &nbsp;<strong style="color:var(--gold-light);">' + escHtml(item.name) + '</strong> <span style="color:var(--text2);font-size:12px;">from ' + escHtml(item.sessionName) + '</span>';
+  document.getElementById('link-modal-ai-hint').innerHTML = (item.suggestedParentName && item.confidence !== 'low') ? '<i class="ti ti-sparkles" style="color:var(--accent);"></i> Suggested link: <strong style="color:var(--gold-light);">' + escHtml(item.suggestedParentName) + '</strong> — ' + escHtml(item.aiReason) : '<i class="ti ti-help-circle" style="color:var(--text3);"></i> Select a node to link to, or add unconnected.';
+  const onMap = c.mapNodes.map(n => { const i = c.ideas.find(x => x.id === n.id); return { n, i }; }).filter(x => x.i && x.i.id !== item.ideaId);
+  const opts = document.getElementById('link-modal-options');
+  if (!onMap.length) { opts.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;">No nodes on map yet.</p>'; }
+  else {
+    const suggMatch = item.suggestedParentName ? onMap.find(x => x.i.title.toLowerCase() === item.suggestedParentName.toLowerCase()) : null;
+    if (suggMatch) { linkSelectedNodeId = suggMatch.n.id; document.getElementById('link-confirm-btn').disabled = false; }
+    opts.innerHTML = onMap.map(({ n, i }) => { const tc2 = TAG_COLORS[i.type] || TAG_COLORS.lore; const isSugg = suggMatch && n.id === suggMatch.n.id; return `<div class="link-option${isSugg ? ' selected' : ''}" id="lo-${n.id}" onclick="selectLinkOption(${n.id})"><span class="lo-tag" style="background:${tc2.bg};color:${tc2.text};">${i.type}</span><div style="flex:1;min-width:0;"><div class="lo-title">${escHtml(i.title)}</div><div class="lo-notes">${escHtml((i.notes || '').slice(0, 60))}</div></div>${isSugg ? '<i class="ti ti-sparkles" style="color:var(--accent);font-size:12px;"></i>' : ''}</div>`; }).join('');
+  }
+  document.getElementById('link-modal').classList.add('open');
+}
+function selectLinkOption(nodeId) { document.querySelectorAll('.link-option').forEach(el => el.classList.remove('selected')); document.getElementById('lo-' + nodeId)?.classList.add('selected'); linkSelectedNodeId = nodeId; document.getElementById('link-confirm-btn').disabled = false; }
+function addNodeToMap(ideaId, fromSession) {
+  const c = getC(); if (c.mapNodes.find(n => n.id === ideaId)) return;
+  const area = document.getElementById('map-area'); const r = area.getBoundingClientRect();
+  c.mapNodes.push({ id: ideaId, x: 40 + Math.random() * Math.max(r.width - 220, 80), y: 40 + Math.random() * Math.max(r.height - 130, 80), mapNote: '', isSuper: false, parentId: null, collapsed: false, fromSession: !!fromSession });
+  renderMapPalette(); renderMapNodes();
+}
+async function linkConfirm() {
+  const c = getC(); const item = c.linkQueue[linkQueueIdx]; if (!item) return; item.processed = true;
+  addNodeToMap(item.ideaId, true);
+  if (linkSelectedNodeId) { const tn = c.mapNodes.find(n => n.id === linkSelectedNodeId); const nn = c.mapNodes.find(n => n.id === item.ideaId); if (tn && nn) { if (tn.isSuper) nn.parentId = linkSelectedNodeId; else { const ex = c.connections.find(x => (x.a === item.ideaId && x.b === linkSelectedNodeId) || (x.a === linkSelectedNodeId && x.b === item.ideaId)); if (!ex) c.connections.push({ a: item.ideaId, b: linkSelectedNodeId }); } } }
+  await saveActive(); closeModal('link-modal'); advanceLinkQueue();
+}
+async function linkAddAlone() { const c = getC(); const item = c.linkQueue[linkQueueIdx]; if (!item) return; item.processed = true; addNodeToMap(item.ideaId, true); await saveActive(); closeModal('link-modal'); advanceLinkQueue(); }
+function linkSkip() { closeModal('link-modal'); advanceLinkQueue(); }
+function advanceLinkQueue() { const c = getC(); const next = c.linkQueue.findIndex((q, i) => i > linkQueueIdx && !q.processed); if (next !== -1) { linkQueueIdx = next; setTimeout(() => showLinkPrompt(c.linkQueue[linkQueueIdx]), 200); } else updateLinkBanner(); }
+
+function renderSessions() {
+  const c = getC(); const list = document.getElementById('session-list'); if (!list) return;
+  if (!c.sessions.length) { list.innerHTML = '<div class="sessions-empty"><i class="ti ti-microphone-off"></i>No sessions yet</div>'; return; }
+  list.innerHTML = c.sessions.map(s => renderSessionCard(s)).join('');
+}
+function renderSessionCard(s) {
+  const dpCount = DP_TYPES.reduce((a, t) => a + (s.dataPoints[t] || []).length, 0);
+  return `<div class="session-card" id="scard-${s.id}"><div class="session-card-hdr" onclick="toggleSession(${s.id})"><div class="s-meta"><div class="s-num">Session ${s.number}</div><div class="s-name">${escHtml(s.name)}</div><div class="s-date">${escHtml(s.date)}</div></div><div class="s-badges"><span class="s-badge"><i class="ti ti-bolt" style="font-size:9px;"></i> ${(s.keyEvents || []).length}</span><span class="s-badge"><i class="ti ti-tag" style="font-size:9px;"></i> ${dpCount}</span></div><div style="display:flex;gap:4px;align-items:center;flex-shrink:0;"><button class="btn sm danger" onclick="deleteSession(event,${s.id})" title="Delete"><i class="ti ti-trash"></i></button><i class="ti ti-chevron-down s-chevron" id="schev-${s.id}"></i></div></div><div class="session-body" id="sbody-${s.id}">${renderSessionBody(s)}</div></div>`;
+}
+function renderSessionBody(s) {
+  const keHtml = (s.keyEvents || []).map((ev, i) => `<div class="key-event" id="ke-item-${s.id}-${i}"><div class="ke-num">${i + 1}</div><div class="ke-text" data-sid="${s.id}" data-idx="${i}" onclick="makeEditable(this)" onblur="saveKeyEvent(this)">${escHtml(ev)}</div><button class="btn sm danger" onclick="deleteKeyEvent(${s.id},${i})" style="padding:2px 6px;flex-shrink:0;"><i class="ti ti-x"></i></button></div>`).join('') || '<p style="font-size:12px;color:var(--text3);">None.</p>';
+  const dpSecs = DP_TYPES.map(type => { const items = s.dataPoints[type] || []; return `<div class="dp-section"><div class="dp-type-lbl"><span style="color:${DP_COLORS[type]};">&#9679; ${type}s (${items.length})</span><button class="btn sm ghost" onclick="addDataPoint(${s.id},'${type}')"><i class="ti ti-plus"></i></button></div><div class="dp-grid" id="dp-${s.id}-${type}">${items.map((dp, i) => renderDpCard(s.id, type, dp, i)).join('') || '<span style="font-size:12px;color:var(--text3);grid-column:1/-1;">None</span>'}</div></div>`; }).join('');
+  return `<div class="s-section"><div class="s-head"><h4><i class="ti ti-pencil"></i> Name</h4></div><input id="sname-edit-${s.id}" type="text" value="${escHtml(s.name)}" style="width:100%;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(10,7,3,.5);color:var(--text);font-size:14px;font-family:inherit;font-weight:700;" oninput="autoSaveSessionName(${s.id})"/></div><div class="s-section"><div class="s-head"><h4><i class="ti ti-bolt"></i> Key Events</h4><button class="btn sm" onclick="addKeyEvent(${s.id})"><i class="ti ti-plus"></i></button></div><div class="key-events" id="ke-${s.id}">${keHtml}</div></div><div class="s-section"><div class="s-head"><h4><i class="ti ti-scroll"></i> Summary</h4><button class="btn sm" onclick="makeSummaryEditable(${s.id})"><i class="ti ti-edit"></i> Edit</button></div><div class="summary-block" id="summary-${s.id}" data-sid="${s.id}" onblur="saveSummary(this)">${escHtml(s.fullSummary || 'No summary.')}</div></div><div class="s-section"><div class="s-head"><h4><i class="ti ti-list-details"></i> Entities</h4><button class="btn sm primary" onclick="syncAllToCodex(${s.id})"><i class="ti ti-book"></i> Sync to codex</button></div>${dpSecs}</div>`;
+}
+function renderDpCard(sid, type, dp, i) {
+  return `<div class="dp-card" id="dp-card-${sid}-${type}-${i}"><div class="dp-tt" style="color:${DP_COLORS[type]};">${type}</div><div class="dp-name">${escHtml(dp.name)}</div><div class="dp-desc">${escHtml(dp.description || '')}</div><div class="dp-actions"><button class="btn sm" onclick="editDpCard(${sid},'${type}',${i})"><i class="ti ti-edit"></i></button><button class="btn sm" onclick="addDpToMap(${sid},'${type}',${i})" title="Map"><i class="ti ti-map-pin"></i></button><button class="btn sm danger" onclick="deleteDp(${sid},'${type}',${i})"><i class="ti ti-trash"></i></button></div></div>`;
+}
+function toggleSession(id) { const body = document.getElementById('sbody-' + id); const chev = document.getElementById('schev-' + id); const open = body.classList.contains('open'); body.classList.toggle('open', !open); chev.classList.toggle('open', !open); }
+async function deleteSession(e, id) { e.stopPropagation(); if (!confirm('Delete session?')) return; const c = getC(); c.sessions = c.sessions.filter(s => s.id !== id); c.linkQueue = c.linkQueue.filter(q => q.sessionId !== id); await saveActive(); renderSessions(); updateLinkBanner(); }
+async function autoSaveSessionName(sid) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const v = document.getElementById('sname-edit-' + sid)?.value; if (v !== undefined) { s.name = v; await saveActive(); } }
+function makeEditable(el) { el.contentEditable = 'true'; el.focus(); }
+async function saveKeyEvent(el) { el.contentEditable = 'false'; const c = getC(); const sid = parseInt(el.dataset.sid); const idx = parseInt(el.dataset.idx); const s = c.sessions.find(x => x.id === sid); if (s && s.keyEvents[idx] !== undefined) { s.keyEvents[idx] = el.innerText.trim(); await saveActive(); } }
+async function addKeyEvent(sid) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const text = prompt('New key event:'); if (!text?.trim()) return; if (!s.keyEvents) s.keyEvents = []; s.keyEvents.push(text.trim()); await saveActive(); const container = document.getElementById('ke-' + sid); if (!container) return; const ph = container.querySelector('p'); if (ph) ph.remove(); const i = s.keyEvents.length - 1; const div = document.createElement('div'); div.id = 'ke-item-' + sid + '-' + i; div.className = 'key-event'; div.innerHTML = '<div class="ke-num">' + (i + 1) + '</div><div class="ke-text" data-sid="' + sid + '" data-idx="' + i + '" onclick="makeEditable(this)" onblur="saveKeyEvent(this)">' + escHtml(text.trim()) + '</div><button class="btn sm danger" onclick="deleteKeyEvent(' + sid + ',' + i + ')" style="padding:2px 6px;flex-shrink:0;"><i class="ti ti-x"></i></button>'; container.appendChild(div); }
+async function deleteKeyEvent(sid, idx) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; s.keyEvents.splice(idx, 1); await saveActive(); const container = document.getElementById('ke-' + sid); if (!container) return; container.innerHTML = (s.keyEvents || []).map((ev, i) => '<div class="key-event"><div class="ke-num">' + (i + 1) + '</div><div class="ke-text" data-sid="' + sid + '" data-idx="' + i + '" onclick="makeEditable(this)" onblur="saveKeyEvent(this)">' + escHtml(ev) + '</div><button class="btn sm danger" onclick="deleteKeyEvent(' + sid + ',' + i + ')" style="padding:2px 6px;flex-shrink:0;"><i class="ti ti-x"></i></button></div>').join('') || '<p style="font-size:12px;color:var(--text3);">None.</p>'; }
+function makeSummaryEditable(sid) { const el = document.getElementById('summary-' + sid); if (el) { el.contentEditable = 'true'; el.focus(); } }
+async function saveSummary(el) { el.contentEditable = 'false'; const c = getC(); const sid = parseInt(el.dataset.sid); const s = c.sessions.find(x => x.id === sid); if (s) { s.fullSummary = el.innerText.trim(); await saveActive(); } }
+async function addDataPoint(sid, type) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const name = prompt('Name:'); if (!name?.trim()) return; const desc = prompt('Description:', '') || ''; if (!s.dataPoints[type]) s.dataPoints[type] = []; s.dataPoints[type].push({ name: name.trim(), description: desc.trim() }); c.ideas.push({ id: c.nextId++, title: name.trim(), type: DP_TO_IDEA[type] || 'lore', notes: desc.trim() || 'From ' + s.name, status: 'unused', fromSessionId: sid }); await saveActive(); renderIdeas(); renderMapPalette(); const grid = document.getElementById('dp-' + sid + '-' + type); if (!grid) return; const ph = grid.querySelector('span'); if (ph) ph.remove(); const i = s.dataPoints[type].length - 1; const div = document.createElement('div'); div.innerHTML = renderDpCard(sid, type, s.dataPoints[type][i], i); grid.appendChild(div.firstElementChild); }
+function editDpCard(sid, type, i) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const dp = s.dataPoints[type]?.[i]; if (!dp) return; const card = document.getElementById('dp-card-' + sid + '-' + type + '-' + i); if (!card) return; card.classList.add('editing'); card.innerHTML = '<div class="dp-tt" style="color:' + DP_COLORS[type] + ';">' + type + '</div><input value="' + escHtml(dp.name) + '" id="dpe-n-' + sid + '-' + type + '-' + i + '" placeholder="Name"/><textarea id="dpe-d-' + sid + '-' + type + '-' + i + '" placeholder="Description">' + escHtml(dp.description || '') + '</textarea><div class="dp-actions"><button class="btn sm primary" onclick="saveDpEdit(' + sid + ',\'' + type + '\',' + i + ')"><i class="ti ti-check"></i></button><button class="btn sm" onclick="cancelDpEdit(' + sid + ',\'' + type + '\',' + i + ')">Cancel</button></div>'; }
+async function saveDpEdit(sid, type, i) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const n = document.getElementById('dpe-n-' + sid + '-' + type + '-' + i)?.value.trim(); const d = document.getElementById('dpe-d-' + sid + '-' + type + '-' + i)?.value.trim(); if (!n) return; const old = s.dataPoints[type][i]?.name; s.dataPoints[type][i] = { name: n, description: d || '' }; const idea = c.ideas.find(x => x.title.toLowerCase() === (old || '').toLowerCase() && x.fromSessionId === sid); if (idea) { idea.title = n; idea.notes = d || idea.notes; } await saveActive(); renderIdeas(); const card = document.getElementById('dp-card-' + sid + '-' + type + '-' + i); if (card) card.outerHTML = renderDpCard(sid, type, s.dataPoints[type][i], i); }
+function cancelDpEdit(sid, type, i) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const card = document.getElementById('dp-card-' + sid + '-' + type + '-' + i); if (card) card.outerHTML = renderDpCard(sid, type, s.dataPoints[type][i], i); }
+async function deleteDp(sid, type, i) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; s.dataPoints[type].splice(i, 1); await saveActive(); const grid = document.getElementById('dp-' + sid + '-' + type); if (grid) grid.innerHTML = s.dataPoints[type].map((dp, j) => renderDpCard(sid, type, dp, j)).join('') || '<span style="font-size:12px;color:var(--text3);grid-column:1/-1;">None</span>'; }
+function addDpToMap(sid, type, i) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; const dp = s.dataPoints[type]?.[i]; if (!dp) return; const idea = c.ideas.find(x => x.title.toLowerCase() === dp.name.toLowerCase()); if (!idea) { alert('Sync to codex first.'); return; } if (c.mapNodes.find(n => n.id === idea.id)) { alert('"' + dp.name + '" already on map.'); return; } c.linkQueue.unshift({ ideaId: idea.id, name: dp.name, type, sessionId: sid, sessionName: s.name, suggestedParentName: '', aiReason: '', confidence: 'low', processed: false }); linkQueueIdx = 0; showLinkPrompt(c.linkQueue[0]); }
+async function syncAllToCodex(sid) { const c = getC(); const s = c.sessions.find(x => x.id === sid); if (!s) return; let added = 0; DP_TYPES.forEach(type => { (s.dataPoints[type] || []).forEach(dp => { if (!dp.name) return; if (!c.ideas.find(x => x.title.toLowerCase() === dp.name.toLowerCase())) { c.ideas.push({ id: c.nextId++, title: dp.name, type: DP_TO_IDEA[type] || 'lore', notes: dp.description || 'From ' + s.name, status: 'unused', fromSessionId: sid }); added++; } }); }); await saveActive(); renderIdeas(); renderMapPalette(); alert('Added ' + added + ' new entities. Duplicates skipped.'); }
+
+/* ══════════════════════════════════════
+   PLAYERS
+══════════════════════════════════════ */
+function renderPlayers() {
+  const c = getC(); const grid = document.getElementById('players-grid'); if (!grid) return;
+  if (!c.players.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;"><i class="ti ti-users"></i>No players yet — add manually or upload a D&D Beyond sheet</div>'; return; }
+  grid.innerHTML = c.players.map(p => renderPlayerCard(p)).join('');
+}
+function renderPlayerCard(p) {
+  const hpPct = p.maxHp ? Math.max(0, Math.min(100, (p.hp / p.maxHp) * 100)) : 100;
+  const hpColor = hpPct > 50 ? 'var(--green)' : hpPct > 25 ? 'var(--gold)' : 'var(--red)';
+  const initials = (p.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const abilityHtml = p.abilities ? ABILITY_NAMES.map((ab, i) => { const score = p.abilities[i] || 10; const mod = Math.floor((score - 10) / 2); return `<div class="stat-box"><div class="sb-label">${ab}</div><div class="sb-val">${score}</div><div class="sb-mod">${mod >= 0 ? '+' : ''}${mod}</div></div>`; }).join('') : '';
+  const traitsHtml = [p.class, p.subclass, p.background, p.race].filter(Boolean).map(t => `<span class="trait-tag">${escHtml(t)}</span>`).join('');
+  return `<div class="player-card" id="pcard-${p.id}">
+    <div class="player-card-hdr">
+      <div class="player-avatar">${escHtml(initials)}</div>
+      <div class="player-info"><div class="player-name">${escHtml(p.name || 'Unknown')}</div><div class="player-class">${escHtml([p.class, p.subclass ? '(' + p.subclass + ')' : '', p.level ? 'Lv ' + p.level : ''].filter(Boolean).join(' ') || 'Adventurer')}</div></div>
+      <div style="display:flex;gap:4px;"><button class="btn sm" onclick="openEditPlayer(${p.id})" title="Edit"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deletePlayer(${p.id})" title="Delete"><i class="ti ti-trash"></i></button></div>
+    </div>
+    <div class="player-body">
+      <div class="hp-row"><div class="hp-bar-outer"><div class="hp-bar-fill" style="width:${hpPct}%;background:linear-gradient(90deg,#a32d2d,${hpColor});"></div></div><span class="hp-label">${p.hp ?? '?'}/${p.maxHp ?? '?'} HP</span><span style="font-size:11px;color:var(--text2);margin-left:6px;">AC ${p.ac || '?'}</span></div>
+      ${abilityHtml ? '<div class="stat-grid">' + abilityHtml + '</div>' : ''}
+      ${traitsHtml ? '<div class="traits-row">' + traitsHtml + '</div>' : ''}
+      ${p.proficiencies ? `<div style="font-size:11px;color:var(--text3);margin-bottom:6px;"><strong style="color:var(--text2);">Proficiencies:</strong> ${escHtml(p.proficiencies)}</div>` : ''}
+      ${p.spellcastingClass ? `<div style="font-size:11px;color:var(--accent);margin-bottom:6px;"><i class="ti ti-wand" style="font-size:10px;"></i> ${escHtml(p.spellcastingClass)} — DC ${p.spellSaveDc || '?'}</div>` : ''}
+      ${p.equipment ? `<div style="font-size:11px;color:var(--text2);"><strong>Equipment:</strong> ${escHtml(p.equipment.slice(0, 120))}${p.equipment.length > 120 ? '...' : ''}</div>` : ''}
+      <div class="player-actions" style="margin-top:8px;">
+        <button class="btn sm" onclick="addPlayerToCombat(${p.id})"><i class="ti ti-sword"></i> Add to combat</button>
+      </div>
+    </div>
+  </div>`;
+}
+function openAddPlayer() {
+  document.getElementById('ep-id').value = '';
+  ['ep-name','ep-class','ep-subclass','ep-race','ep-background','ep-level','ep-hp','ep-maxhp','ep-ac','ep-str','ep-dex','ep-con','ep-int','ep-wis','ep-cha','ep-prof','ep-sc-class','ep-sc-dc','ep-equipment','ep-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('player-modal-title').textContent = 'Add Player';
+  document.getElementById('player-modal').classList.add('open');
+}
+function openEditPlayer(id) {
+  const c = getC(); const p = c.players.find(x => x.id === id); if (!p) return;
+  document.getElementById('ep-id').value = id;
+  document.getElementById('ep-name').value = p.name || '';
+  document.getElementById('ep-class').value = p.class || '';
+  document.getElementById('ep-subclass').value = p.subclass || '';
+  document.getElementById('ep-race').value = p.race || '';
+  document.getElementById('ep-background').value = p.background || '';
+  document.getElementById('ep-level').value = p.level || '';
+  document.getElementById('ep-hp').value = p.hp ?? '';
+  document.getElementById('ep-maxhp').value = p.maxHp ?? '';
+  document.getElementById('ep-ac').value = p.ac || '';
+  if (p.abilities) { ['ep-str','ep-dex','ep-con','ep-int','ep-wis','ep-cha'].forEach((id2, i) => { const el = document.getElementById(id2); if (el) el.value = p.abilities[i] || ''; }); }
+  document.getElementById('ep-prof').value = p.proficiencies || '';
+  document.getElementById('ep-sc-class').value = p.spellcastingClass || '';
+  document.getElementById('ep-sc-dc').value = p.spellSaveDc || '';
+  document.getElementById('ep-equipment').value = p.equipment || '';
+  document.getElementById('ep-notes').value = p.notes || '';
+  document.getElementById('player-modal-title').textContent = 'Edit Player';
+  document.getElementById('player-modal').classList.add('open');
+}
+async function savePlayer() {
+  const c = getC();
+  const id = parseInt(document.getElementById('ep-id').value) || null;
+  const name = document.getElementById('ep-name').value.trim(); if (!name) { alert('Name required.'); return; }
+  const abilities = ['ep-str','ep-dex','ep-con','ep-int','ep-wis','ep-cha'].map(id2 => parseInt(document.getElementById(id2)?.value) || 10);
+  const p = { id: id || c.nextPlayerId++, name, class: document.getElementById('ep-class').value.trim(), subclass: document.getElementById('ep-subclass').value.trim(), race: document.getElementById('ep-race').value.trim(), background: document.getElementById('ep-background').value.trim(), level: parseInt(document.getElementById('ep-level').value) || 1, hp: parseInt(document.getElementById('ep-hp').value) || 0, maxHp: parseInt(document.getElementById('ep-maxhp').value) || 0, ac: parseInt(document.getElementById('ep-ac').value) || 10, abilities, proficiencies: document.getElementById('ep-prof').value.trim(), spellcastingClass: document.getElementById('ep-sc-class').value.trim(), spellSaveDc: parseInt(document.getElementById('ep-sc-dc').value) || null, equipment: document.getElementById('ep-equipment').value.trim(), notes: document.getElementById('ep-notes').value.trim() };
+  if (id) { const idx = c.players.findIndex(x => x.id === id); c.players[idx] = p; } else c.players.push(p);
+  closeModal('player-modal'); await saveActive(); renderPlayers();
+}
+async function deletePlayer(id) { if (!confirm('Remove this player?')) return; const c = getC(); c.players = c.players.filter(p => p.id !== id); await saveActive(); renderPlayers(); }
+
+async function uploadCharacterSheet(e) {
+  const file = e.target.files[0]; if (!file) return; e.target.value = '';
+  const antKey = getAntKey(); if (!antKey) return;
+  const btn = document.getElementById('upload-sheet-btn'); if (btn) { btn.innerHTML = '<i class="ti ti-loader"></i> Reading sheet...'; btn.disabled = true; }
+  try {
+    const base64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(file); });
+    const prompt = `This is a D&D Beyond character sheet PDF. Extract the character data and return ONLY a raw JSON object (no markdown, no preamble):
+{"name":"","class":"","subclass":"","race":"","background":"","level":1,"hp":0,"maxHp":0,"ac":0,"abilities":[10,10,10,10,10,10],"proficiencies":"comma separated proficiency list","spellcastingClass":"","spellSaveDc":null,"equipment":"comma separated equipment list","notes":"any other notable traits or features"}
+abilities array order: STR,DEX,CON,INT,WIS,CHA. Return raw JSON only.`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': antKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1000, messages: [{ role: 'user', content: [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }, { type: 'text', text: prompt }] }] }) });
+    const data = await res.json(); let raw = data.content?.map(b => b.text || '').join('').trim() || '';
+    raw = raw.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+    const parsed = JSON.parse(raw);
+    const c = getC(); const p = { id: c.nextPlayerId++, ...parsed };
+    c.players.push(p); await saveActive(); renderPlayers();
+    alert('Character sheet imported: ' + (parsed.name || 'Unknown'));
+  } catch (err) { alert('Could not read sheet: ' + (err.message || err) + '\n\nTry adding manually.'); }
+  if (btn) { btn.innerHTML = '<i class="ti ti-file-upload"></i> Upload D&D Beyond sheet'; btn.disabled = false; }
+}
+
+function addPlayerToCombat(playerId) {
+  const c = getC(); const p = c.players.find(x => x.id === playerId); if (!p) return;
+  const already = c.combat.combatants.find(x => x.playerId === playerId);
+  if (already) { alert(p.name + ' is already in combat.'); return; }
+  const roll = Math.ceil(Math.random() * 20) + Math.floor(((p.abilities?.[1] || 10) - 10) / 2);
+  c.combat.combatants.push({ id: Date.now(), playerId, name: p.name, type: 'player', initiative: roll, hp: p.hp, maxHp: p.maxHp, ac: p.ac, conditions: [], deathSaves: { success: 0, fail: 0 } });
+  saveActive(); renderCombat();
+  const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.textContent.includes('Combat'));
+  if (tab) showPanel('combat', tab);
+}
+
+/* ══════════════════════════════════════
+   COMBAT / INITIATIVE TRACKER
+══════════════════════════════════════ */
+function renderCombat() {
+  const c = getC(); const ct = c.combat;
+  const view = document.getElementById('combat-view'); if (!view) return;
+  document.getElementById('round-badge').textContent = 'Round ' + ct.round;
+  const sortedByInit = [...ct.combatants].sort((a, b) => b.initiative - a.initiative);
+  const isCollapsed = ct.collapsed;
+  view.className = 'combat-view' + (isCollapsed ? ' init-collapsed' : '');
+  document.getElementById('collapse-combat-btn').innerHTML = isCollapsed ? '<i class="ti ti-list-details"></i> Expand' : '<i class="ti ti-layout-list"></i> Collapse';
+  if (!ct.combatants.length) {
+    view.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:2rem;color:var(--text3);"><i class="ti ti-sword" style="font-size:30px;display:block;margin-bottom:8px;"></i>No combatants — add players or monsters below</div>';
+    return;
+  }
+  const hdr = isCollapsed ? '' : `<div class="combat-hdr"><div class="ch-init">INIT</div><div class="ch-name">NAME</div><div class="ch-hp">HP</div><div class="ch-ac">AC</div><div class="ch-cond">CONDITIONS</div><div class="ch-act"></div></div>`;
+  const rows = sortedByInit.map((cmb, sortIdx) => {
+    const origIdx = ct.combatants.findIndex(x => x.id === cmb.id);
+    const isActive = ct.active && sortIdx === ct.turnIdx;
+    const isDead = cmb.hp !== null && cmb.hp !== undefined && cmb.hp <= 0 && cmb.maxHp;
+    const hpPct = cmb.maxHp ? Math.max(0, Math.min(100, (cmb.hp / cmb.maxHp) * 100)) : 100;
+    const hpColor = hpPct > 50 ? 'var(--green)' : hpPct > 25 ? 'var(--gold)' : 'var(--red)';
+    const condHtml = CONDITIONS.map(cond => {
+      const has = (cmb.conditions || []).includes(cond);
+      const col = COND_COLORS[cond] || '#888';
+      return `<span class="cond-badge" style="border-color:${col};color:${has ? '#fff' : col};background:${has ? col + '99' : 'transparent'};" onclick="toggleCondition(${origIdx},'${cond}')" title="${cond}">${cond.slice(0, 3)}</span>`;
+    }).join('');
+    const dsHtml = isDead ? `<div class="death-saves"><span>Death saves:</span><div class="ds-row">${[0,1,2].map(i => `<div class="ds-pip success${i < cmb.deathSaves.success ? ' filled' : ''}" onclick="addDeathSave(${origIdx},'success')" title="Success"></div>`).join('')}</div><div class="ds-row">${[0,1,2].map(i => `<div class="ds-pip fail${i < cmb.deathSaves.fail ? ' filled' : ''}" onclick="addDeathSave(${origIdx},'fail')" title="Fail"></div>`).join('')}</div></div>` : '';
+    return `<div class="combatant-row${isActive ? ' active-turn' : ''}${isDead ? ' dead' : ''}" id="combatant-${cmb.id}">
+      <div class="c-init"><input type="number" value="${cmb.initiative}" onchange="updateInit(${origIdx},this.value)" title="Initiative"/></div>
+      <div class="c-name"><input type="text" value="${escHtml(cmb.name)}" onchange="updateCombatantName(${origIdx},this.value)"/><div class="c-type">${cmb.type === 'player' ? '&#9670; Player' : '&#9632; Monster'}</div>${dsHtml}</div>
+      <div class="c-hp">
+        <input type="number" value="${cmb.hp ?? ''}" onchange="updateHp(${origIdx},this.value,'current')" title="Current HP" style="color:${hpColor};"/>
+        <span class="hp-sep">/</span>
+        <input type="number" value="${cmb.maxHp ?? ''}" onchange="updateHp(${origIdx},this.value,'max')" title="Max HP"/>
+      </div>
+      <div class="c-ac"><input type="number" value="${cmb.ac ?? ''}" onchange="updateAc(${origIdx},this.value)" title="AC"/></div>
+      <div class="c-cond">${condHtml}</div>
+      <div class="c-act">
+        <button class="btn sm danger" onclick="dmgHeal(${origIdx},-1)" title="Damage"><i class="ti ti-minus"></i></button>
+        <button class="btn sm success" onclick="dmgHeal(${origIdx},1)" title="Heal"><i class="ti ti-plus"></i></button>
+        <button class="btn sm ghost" onclick="removeCombatant(${origIdx})" title="Remove"><i class="ti ti-x"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  const addRow = `<div class="add-combatant-row">
+    <input id="new-cmb-name" type="text" placeholder="Monster or NPC name" style="flex:1;min-width:120px;" onkeydown="if(event.key==='Enter')addCombatant()"/>
+    <input id="new-cmb-init" type="number" placeholder="Init" style="width:60px;" onkeydown="if(event.key==='Enter')addCombatant()"/>
+    <input id="new-cmb-hp" type="number" placeholder="HP" style="width:60px;" onkeydown="if(event.key==='Enter')addCombatant()"/>
+    <input id="new-cmb-ac" type="number" placeholder="AC" style="width:56px;" onkeydown="if(event.key==='Enter')addCombatant()"/>
+    <button class="btn primary" onclick="addCombatant()"><i class="ti ti-plus"></i> Add</button>
+  </div>`;
+  const log = isCollapsed ? '' : `<div class="combat-log" id="combat-log">${(ct.log || []).slice(-60).map(l => `<div class="log-entry ${l.type || ''}">${escHtml(l.text)}</div>`).join('') || '<span style="color:var(--text3);">No events yet...</span>'}</div>`;
+  view.innerHTML = hdr + rows + addRow + log;
+  if (!isCollapsed) { const logEl = document.getElementById('combat-log'); if (logEl) logEl.scrollTop = logEl.scrollHeight; }
+}
+
+async function addCombatant() {
+  const c = getC(); const ct = c.combat;
+  const name = document.getElementById('new-cmb-name')?.value.trim(); if (!name) return;
+  const init = parseInt(document.getElementById('new-cmb-init')?.value) || Math.ceil(Math.random() * 20);
+  const hp = parseInt(document.getElementById('new-cmb-hp')?.value) || null;
+  const ac = parseInt(document.getElementById('new-cmb-ac')?.value) || null;
+  ct.combatants.push({ id: Date.now(), name, type: 'monster', initiative: init, hp, maxHp: hp, ac, conditions: [], deathSaves: { success: 0, fail: 0 } });
+  addLog(ct, name + ' enters combat (Init: ' + init + ')', 'highlight');
+  ['new-cmb-name','new-cmb-init','new-cmb-hp','new-cmb-ac'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  await saveActive(); renderCombat();
+}
+
+async function removeCombatant(idx) {
+  const c = getC(); const ct = c.combat; const cmb = ct.combatants[idx]; if (!cmb) return;
+  addLog(ct, cmb.name + ' removed from combat.', '');
+  ct.combatants.splice(idx, 1);
+  if (ct.turnIdx >= ct.combatants.length) ct.turnIdx = 0;
+  await saveActive(); renderCombat();
+}
+
+async function startCombat() {
+  const c = getC(); const ct = c.combat;
+  if (!ct.combatants.length) { alert('Add combatants first.'); return; }
+  ct.active = true; ct.round = 1; ct.turnIdx = 0; ct.log = [];
+  ct.combatants.sort((a, b) => b.initiative - a.initiative);
+  addLog(ct, '⚔ Combat begins! Round 1.', 'highlight');
+  addLog(ct, "It's " + ct.combatants[0]?.name + "'s turn.", 'highlight');
+  await saveActive(); renderCombat();
+}
+
+async function endCombat() {
+  if (!confirm('End combat and clear all combatants?')) return;
+  const c = getC(); const ct = c.combat;
+  ct.active = false; ct.round = 1; ct.turnIdx = 0; ct.combatants = []; ct.log = [];
+  await saveActive(); renderCombat();
+}
+
+async function nextTurn() {
+  const c = getC(); const ct = c.combat;
+  if (!ct.active || !ct.combatants.length) return;
+  const sorted = [...ct.combatants].sort((a, b) => b.initiative - a.initiative);
+  ct.turnIdx = (ct.turnIdx + 1) % sorted.length;
+  if (ct.turnIdx === 0) { ct.round++; addLog(ct, '── Round ' + ct.round + ' begins ──', 'highlight'); }
+  const current = sorted[ct.turnIdx];
+  addLog(ct, "It's " + current.name + "'s turn. (Initiative " + current.initiative + ')', 'highlight');
+  await saveActive(); renderCombat();
+}
+
+async function prevTurn() {
+  const c = getC(); const ct = c.combat;
+  if (!ct.active || !ct.combatants.length) return;
+  ct.turnIdx = (ct.turnIdx - 1 + ct.combatants.length) % ct.combatants.length;
+  if (ct.turnIdx === ct.combatants.length - 1 && ct.round > 1) ct.round--;
+  const sorted = [...ct.combatants].sort((a, b) => b.initiative - a.initiative);
+  addLog(ct, 'Back to ' + sorted[ct.turnIdx]?.name + '.', '');
+  await saveActive(); renderCombat();
+}
+
+async function updateInit(idx, val) {
+  const c = getC(); const ct = c.combat; ct.combatants[idx].initiative = parseInt(val) || 0;
+  ct.combatants.sort((a, b) => b.initiative - a.initiative); await saveActive(); renderCombat();
+}
+async function updateCombatantName(idx, val) { const c = getC(); c.combat.combatants[idx].name = val.trim(); await saveActive(); }
+async function updateHp(idx, val, which) {
+  const c = getC(); const ct = c.combat; const cmb = ct.combatants[idx]; if (!cmb) return;
+  const n = parseInt(val); if (isNaN(n)) return;
+  if (which === 'current') { const old = cmb.hp; cmb.hp = n; if (old !== null && old !== undefined) { const diff = n - old; addLog(ct, cmb.name + (diff < 0 ? ' takes ' + Math.abs(diff) + ' damage' : ' heals ' + diff + ' HP') + '. HP: ' + n + '/' + (cmb.maxHp || '?'), diff < 0 ? 'dmg' : 'heal'); } }
+  else cmb.maxHp = n;
+  await saveActive(); renderCombat();
+}
+async function updateAc(idx, val) { const c = getC(); c.combat.combatants[idx].ac = parseInt(val) || null; await saveActive(); }
+async function toggleCondition(idx, cond) {
+  const c = getC(); const ct = c.combat; const cmb = ct.combatants[idx]; if (!cmb) return;
+  if (!cmb.conditions) cmb.conditions = [];
+  const has = cmb.conditions.includes(cond);
+  if (has) { cmb.conditions = cmb.conditions.filter(x => x !== cond); addLog(ct, cmb.name + ' is no longer ' + cond + '.', ''); }
+  else { cmb.conditions.push(cond); addLog(ct, cmb.name + ' is ' + cond + '!', 'dmg'); }
+  await saveActive(); renderCombat();
+}
+async function addDeathSave(idx, type) {
+  const c = getC(); const ct = c.combat; const cmb = ct.combatants[idx]; if (!cmb) return;
+  if (!cmb.deathSaves) cmb.deathSaves = { success: 0, fail: 0 };
+  if (type === 'success') { cmb.deathSaves.success = Math.min(3, cmb.deathSaves.success + 1); if (cmb.deathSaves.success >= 3) { cmb.hp = 1; addLog(ct, cmb.name + ' stabilises!', 'heal'); } }
+  else { cmb.deathSaves.fail = Math.min(3, cmb.deathSaves.fail + 1); if (cmb.deathSaves.fail >= 3) addLog(ct, cmb.name + ' has died!', 'dmg'); }
+  await saveActive(); renderCombat();
+}
+function dmgHeal(idx, direction) {
+  const amt = parseInt(prompt(direction > 0 ? 'Heal amount:' : 'Damage amount:')); if (isNaN(amt) || amt <= 0) return;
+  const c = getC(); const ct = c.combat; const cmb = ct.combatants[idx]; if (!cmb) return;
+  const old = cmb.hp ?? 0; cmb.hp = Math.max(0, old + (direction * amt));
+  addLog(ct, direction > 0 ? cmb.name + ' heals ' + amt + ' HP. (' + cmb.hp + '/' + (cmb.maxHp || '?') + ')' : cmb.name + ' takes ' + amt + ' damage. (' + cmb.hp + '/' + (cmb.maxHp || '?') + ')', direction > 0 ? 'heal' : 'dmg');
+  saveActive(); renderCombat();
+}
+function addLog(ct, text, type) { if (!ct.log) ct.log = []; ct.log.push({ text, type }); if (ct.log.length > 200) ct.log = ct.log.slice(-200); }
+async function rollAllInitiatives() {
+  const c = getC(); const ct = c.combat;
+  ct.combatants.forEach(cmb => {
+    const dexMod = cmb.playerId ? Math.floor(((c.players.find(p => p.id === cmb.playerId)?.abilities?.[1] || 10) - 10) / 2) : 0;
+    cmb.initiative = Math.ceil(Math.random() * 20) + dexMod;
+    addLog(ct, cmb.name + ' rolls ' + cmb.initiative + ' initiative.', '');
+  });
+  ct.combatants.sort((a, b) => b.initiative - a.initiative);
+  await saveActive(); renderCombat();
+}
+async function toggleCollapseCombat() {
+  const c = getC(); c.combat.collapsed = !c.combat.collapsed; await saveActive(); renderCombat();
+}
+async function clearAllConditions() {
+  const c = getC(); c.combat.combatants.forEach(cmb => { cmb.conditions = []; }); addLog(c.combat, 'All conditions cleared.', ''); await saveActive(); renderCombat();
+}
+
+
+/* ══════════════════════════════════════
+   MODAL CLOSE LISTENERS & BOOT
+══════════════════════════════════════ */
+['idea-modal','new-campaign-modal','parent-modal','link-modal','manual-modal','player-modal'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', e => { if (e.target === el) closeModal(id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['idea-modal','new-campaign-modal','parent-modal','link-modal','manual-modal','player-modal'].forEach(id => closeModal(id));
+    hideCtxMenu();
+  }
+});
+loadData();
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</body>
+</html>
